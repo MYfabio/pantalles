@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      String   @default("EDITOR")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  contents  Content[]
+}
+
+model Screen {
+  id         String          @id @default(cuid())
+  name       String
+  slug       String          @unique
+  location   String?
+  active     Boolean         @default(true)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  contents   ContentScreen[]
+}
+
+model Content {
+  id        String          @id @default(cuid())
+  title     String
+  body      String?
+  status    String          @default("DRAFT")
+  duration  Int             @default(10)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  authorId  String
+  author    User            @relation(fields: [authorId], references: [id])
+  screens   ContentScreen[]
+}
+
+model ContentScreen {
+  contentId String
+  screenId  String
+  content   Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  screen    Screen  @relation(fields: [screenId], references: [id], onDelete: Cascade)
+
+  @@id([contentId, screenId])
+}
+
+model Settings {
+  id             String  @id @default("main")
+  schoolName     String  @default("Escola Industrial")
+  primaryColor   String  @default("#1a3a5c")
+  secondaryColor String  @default("#4a8abf")
+  accentColor    String  @default("#6aadde")
+  fontTitle      String  @default("Inter")
+  fontBody       String  @default("Inter")
+  logoUrl        String?
+}
