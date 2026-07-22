@@ -8,3 +8,4 @@ App per gestionar contingut a pantalles digitals.
 
 ## Desplegament
 Railway automàtic a cada push a main.
+ 
