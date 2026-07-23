@@ -6,6 +6,7 @@ COPY prisma ./prisma
 RUN npm install
 COPY . .
 RUN npx prisma generate
+RUN npx prisma db push --skip-generate --skip-verify
 RUN npm run build
 EXPOSE 3000
 CMD ["npm", "start"]
