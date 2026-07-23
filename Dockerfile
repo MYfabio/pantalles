@@ -1,11 +1,12 @@
-FROM node:20-alpine 
-RUN apk add --no-cache openssl 
-WORKDIR /app 
-COPY package*.json ./ 
-RUN npm install 
-COPY . . 
-RUN npx prisma generate 
-RUN npx prisma db push --skip-generate --skip-verify 
-RUN npm run build 
-EXPOSE 3000 
-CMD ["npm", "start"] 
+FROM node:20-alpine
+RUN apk add --no-cache openssl
+WORKDIR /app
+COPY package*.json ./
+COPY prisma ./prisma
+RUN npm install
+COPY . .
+RUN npx prisma generate
+RUN npx prisma db push --skip-generate --accept-data-loss
+RUN npm run build
+EXPOSE 3000
+CMD ["npm", "start"]
