@@ -6,10 +6,10 @@ import { signOut, useSession } from "next-auth/react";
 
 const links = [
   { href: "/dashboard", label: "Tauler", icon: "📊" },
-  { href: "/dashboard/screens", label: "Pantalles", icon: "🖥️" },
-  { href: "/dashboard/contents", label: "Continguts", icon: "📝" },
-  { href: "/dashboard/users", label: "Usuaris", icon: "👥" },
   { href: "/dashboard/panel", label: "Panell general", icon: "🗂️" },
+  { href: "/dashboard/contents", label: "Continguts", icon: "📝" },
+  { href: "/dashboard/screens", label: "Pantalles", icon: "🖥️" },
+  { href: "/dashboard/users", label: "Usuaris", icon: "👥" },
   { href: "/dashboard/settings", label: "Configuracio", icon: "⚙️" },
 ];
 
