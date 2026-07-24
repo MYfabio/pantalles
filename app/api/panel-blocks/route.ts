@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session) {
@@ -13,7 +15,7 @@ export async function GET() {
     const blocks = await prisma.panelBlock.findMany({
       orderBy: { order: "asc" },
     });
-    return NextResponse.json(blocks);
+    return NextResponse.json(blocks, { headers: { "Cache-Control": "no-store, must-revalidate" } });
   } catch (error) {
     console.error("ERROR PANEL BLOCKS:", error);
     return NextResponse.json({ error: "Error obtenint els blocs" }, { status: 500 });

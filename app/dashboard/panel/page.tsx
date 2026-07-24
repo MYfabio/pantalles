@@ -43,9 +43,9 @@ export default function PanelEditorPage() {
     setLoading(true);
     try {
       const [blocksRes, settingsRes, screensRes] = await Promise.all([
-        fetch("/api/panel-blocks"),
-        fetch("/api/settings"),
-        fetch("/api/screens"),
+        fetch("/api/panel-blocks", { cache: "no-store" }),
+        fetch("/api/settings", { cache: "no-store" }),
+        fetch("/api/screens", { cache: "no-store" }),
       ]);
       const blocksData = await blocksRes.json();
       const settingsData = await settingsRes.json();

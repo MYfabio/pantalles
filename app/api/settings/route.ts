@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 function toPanelJson(panel: { screens: { screenId: string }[] } & Record<string, any>) {
   const { screens, ...rest } = panel;
   return { ...rest, screenIds: screens.map((s) => s.screenId) };
@@ -24,7 +26,10 @@ export async function GET() {
         include: { screens: true },
       }),
     ]);
-    return NextResponse.json({ ...settings, panel: toPanelJson(panel) });
+    return NextResponse.json(
+      { ...settings, panel: toPanelJson(panel) },
+      { headers: { "Cache-Control": "no-store, must-revalidate" } }
+    );
   } catch (error) {
     console.error("ERROR SETTINGS:", error);
     return NextResponse.json({ error: "Error obtenint la configuracio" }, { status: 500 });
