@@ -1,14 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
 
-const COLORS: Record<string, string> = {
+export const COLORS: Record<string, string> = {
   general: "#a00842",
   secretaria: "#7b1e48",
   eso: "#1769aa",
   batx: "#6a4c93",
   fp: "#087f6b",
 };
-const LABELS: Record<string, string> = {
+export const LABELS: Record<string, string> = {
   general: "General",
   secretaria: "Secretaria",
   eso: "ESO",
