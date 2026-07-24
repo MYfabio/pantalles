@@ -11,6 +11,7 @@ const links = [
   { href: "/dashboard/screens", label: "Pantalles", icon: "🖥️" },
   { href: "/dashboard/users", label: "Usuaris", icon: "👥" },
   { href: "/dashboard/settings", label: "Configuracio", icon: "⚙️" },
+  { href: "/dashboard/help", label: "Ajuda / Manual", icon: "❓" },
 ];
 
 export default function Sidebar() {
