@@ -38,6 +38,6 @@ export async function GET(req: NextRequest) {
     });
     return NextResponse.json(contents);
   } catch (error) {
-    return NextResponse.json({ error: "Error obteniendo contenidos" }, { status: 500 });
+    console.error("ERROR CONTENTS:", error);
+    return NextResponse.json({ error: String(error) }, { status: 500 });
   }
-}
