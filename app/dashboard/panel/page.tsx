@@ -89,6 +89,20 @@ export default function PanelEditorPage() {
     });
   };
 
+  const checkResponse = async (res: Response, label: string) => {
+    if (!res.ok) {
+      let detail = "";
+      try {
+        const data = await res.json();
+        detail = data?.error || JSON.stringify(data);
+      } catch {
+        detail = await res.text().catch(() => "");
+      }
+      throw new Error(`${label} ha fallat (${res.status}): ${detail}`);
+    }
+    return res;
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -104,27 +118,30 @@ export default function PanelEditorPage() {
               date: b.date,
               typeText: b.typeText,
             }),
-          })
+          }).then((res) => checkResponse(res, `Bloc "${b.key}"`))
         )
       );
 
-      await fetch("/api/panel-blocks", {
+      const orderRes = await fetch("/api/panel-blocks", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ blocks: blocks.map((b) => ({ id: b.id, order: b.order })) }),
       });
+      await checkResponse(orderRes, "Ordre dels blocs");
 
-      await fetch("/api/settings", {
+      const settingsRes = await fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           panel: { logoUrl, showClock, showWeather, showQuote, quoteText, screenIds },
         }),
       });
+      await checkResponse(settingsRes, "Configuracio del panell");
 
       alert("Panell guardat");
-    } catch (error) {
-      alert("Error guardant el panell");
+    } catch (error: any) {
+      console.error("ERROR SAVING PANEL:", error);
+      alert(`Error guardant el panell.\n\n${error?.message || error}`);
     } finally {
       setSaving(false);
     }

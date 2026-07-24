@@ -76,8 +76,14 @@ export async function PATCH(req: NextRequest) {
     }
 
     return NextResponse.json({ ...settings, panel: toPanelJson(panelSettings) });
-  } catch (error) {
-    console.error("ERROR UPDATING SETTINGS:", error);
+  } catch (error: any) {
+    console.error("ERROR UPDATING SETTINGS:", {
+      body: { schoolName, primaryColor, secondaryColor, accentColor, logoUrl, panel },
+      message: error?.message,
+      code: error?.code,
+      meta: error?.meta,
+      stack: error?.stack,
+    });
     return NextResponse.json({ error: "Error actualitzant la configuracio" }, { status: 500 });
   }
 }

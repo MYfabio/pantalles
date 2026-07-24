@@ -17,8 +17,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       data: { enabled, title, text, date, typeText },
     });
     return NextResponse.json(block);
-  } catch (error) {
-    console.error("ERROR UPDATING PANEL BLOCK:", error);
+  } catch (error: any) {
+    console.error("ERROR UPDATING PANEL BLOCK:", {
+      blockId: params.id,
+      message: error?.message,
+      code: error?.code,
+      meta: error?.meta,
+      stack: error?.stack,
+    });
     return NextResponse.json({ error: "Error actualitzant el bloc" }, { status: 500 });
   }
 }

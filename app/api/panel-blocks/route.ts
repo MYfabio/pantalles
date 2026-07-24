@@ -43,8 +43,14 @@ export async function PATCH(req: NextRequest) {
     );
     const updated = await prisma.panelBlock.findMany({ orderBy: { order: "asc" } });
     return NextResponse.json(updated);
-  } catch (error) {
-    console.error("ERROR REORDERING PANEL BLOCKS:", error);
+  } catch (error: any) {
+    console.error("ERROR REORDERING PANEL BLOCKS:", {
+      blocks,
+      message: error?.message,
+      code: error?.code,
+      meta: error?.meta,
+      stack: error?.stack,
+    });
     return NextResponse.json({ error: "Error reordenant els blocs" }, { status: 500 });
   }
 }
