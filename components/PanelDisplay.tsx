@@ -336,7 +336,8 @@ export default function PanelDisplay({
           margin: 0;
           font-size: 26px;
           line-height: 1.28;
-          color: #444;
+          font-weight: 700;
+          color: var(--accent);
         }
         .panel-card-image {
           width: 100%;
@@ -372,7 +373,8 @@ export default function PanelDisplay({
           margin: 0;
           font-size: 42px;
           line-height: 1.35;
-          color: #444;
+          font-weight: 700;
+          color: var(--accent);
         }
         .panel-meta {
           margin-top: 16px;

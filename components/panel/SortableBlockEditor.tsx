@@ -4,6 +4,8 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { COLORS, LABELS } from "@/components/PanelDisplay";
 
+const TYPE_OPTIONS = ["Activitat", "Sortida", "Orientació", "Avís", "Centre", "Empresa"];
+
 export interface EditableBlock {
   id: string;
   key: string;
@@ -28,6 +30,7 @@ export default function SortableBlockEditor({
   });
   const [collapsed, setCollapsed] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [improving, setImproving] = useState(false);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -51,6 +54,28 @@ export default function SortableBlockEditor({
     } finally {
       setUploading(false);
       e.target.value = "";
+    }
+  };
+
+  const handleImprove = async () => {
+    if (!block.text.trim()) {
+      alert("Escriu primer un text a millorar");
+      return;
+    }
+    setImproving(true);
+    try {
+      const res = await fetch("/api/improve-text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: block.text }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Error millorant el text");
+      onChange(block.id, { text: data.text });
+    } catch (error: any) {
+      alert(error?.message || "Error millorant el text");
+    } finally {
+      setImproving(false);
     }
   };
 
@@ -101,7 +126,18 @@ export default function SortableBlockEditor({
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
           />
 
-          <label className="block text-xs font-bold mt-2 mb-1">Text</label>
+          <div className="flex items-center justify-between mt-2 mb-1">
+            <label className="block text-xs font-bold">Text</label>
+            <button
+              type="button"
+              onClick={handleImprove}
+              disabled={improving}
+              className="text-xs font-medium px-2 py-1 rounded"
+              style={{ background: "#a00842", color: "#fff" }}
+            >
+              {improving ? "Millorant..." : "✨ Millora amb IA"}
+            </button>
+          </div>
           <textarea
             value={block.text}
             onChange={(e) => onChange(block.id, { text: e.target.value })}
@@ -120,12 +156,18 @@ export default function SortableBlockEditor({
             </div>
             <div>
               <label className="block text-xs font-bold mb-1">Tipus</label>
-              <input
-                type="text"
+              <select
                 value={block.typeText}
                 onChange={(e) => onChange(block.id, { typeText: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-              />
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+              >
+                <option value="">— Selecciona —</option>
+                {TYPE_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
