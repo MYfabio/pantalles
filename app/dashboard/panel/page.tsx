@@ -253,17 +253,7 @@ export default function PanelEditorPage() {
               disabled={uploadingLogo}
               className="w-full text-xs mb-2"
             />
-            {uploadingLogo && <div className="text-xs text-gray-400 mb-2">Pujant logotip...</div>}
-            <label className="block text-xs font-bold mb-1">
-              O enganxa una URL <span className="text-gray-400 font-normal">(opcional)</span>
-            </label>
-            <input
-              type="text"
-              value={logoUrl}
-              onChange={(e) => setLogoUrl(e.target.value)}
-              placeholder="https://.../logo.svg"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-3"
-            />
+            {uploadingLogo && <div className="text-xs text-gray-400 mb-3">Pujant logotip...</div>}
 
             <div className="flex items-center justify-between px-3 py-2 border rounded-lg bg-gray-50 mb-2">
               <span className="text-sm font-bold">Mostrar rellotge</span>
