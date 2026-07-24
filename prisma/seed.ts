@@ -97,6 +97,14 @@ async function main() {
     });
   }
 
+  await prisma.panelSettings.upsert({
+    where: { id: "main" },
+    update: {},
+    create: {
+      quoteText: "Cada dia és una nova oportunitat per aprendre.",
+    },
+  });
+
   console.log("Seed completed");
 }
 

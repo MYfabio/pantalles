@@ -76,3 +76,12 @@ model Settings {
   fontBody       String  @default("Inter")
   logoUrl        String?
 }
+
+model PanelSettings {
+  id          String  @id @default("main")
+  logoUrl     String?
+  showClock   Boolean @default(true)
+  showWeather Boolean @default(true)
+  showQuote   Boolean @default(false)
+  quoteText   String?
+}
