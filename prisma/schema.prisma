@@ -31,16 +31,18 @@ model Screen {
 }
 
 model Content {
-  id        String          @id @default(cuid())
-  title     String
-  body      String?
-  status    String          @default("DRAFT")
-  duration  Int             @default(10)
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
-  authorId  String
-  author    User            @relation(fields: [authorId], references: [id])
-  screens   ContentScreen[]
+  id            String          @id @default(cuid())
+  title         String
+  body          String?
+  status        String          @default("DRAFT")
+  duration      Int             @default(10)
+  department    String?
+  generatedHtml String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  authorId      String
+  author        User            @relation(fields: [authorId], references: [id])
+  screens       ContentScreen[]
 }
 
 model ContentScreen {

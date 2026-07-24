@@ -33,7 +33,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const { title, body, status, screenIds } = await req.json();
+  const { title, body, status, screenIds, department, generatedHtml } = await req.json();
 
   try {
     const content = await prisma.content.update({
@@ -42,6 +42,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         title,
         body,
         status,
+        department,
+        generatedHtml,
         updatedAt: new Date(),
         ...(screenIds !== undefined && {
           screens: {

@@ -8,13 +8,15 @@ export async function POST(req: NextRequest) {
   if (!session || !session.user) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
-  const { title, body, status, screenIds } = await req.json();
+  const { title, body, status, screenIds, department, generatedHtml } = await req.json();
   try {
     const content = await prisma.content.create({
       data: {
         title,
         body,
         status,
+        department,
+        generatedHtml,
         authorId: (session.user as any).id,
         screens: {
           create: ((screenIds || []) as string[]).map((screenId) => ({ screenId })),
