@@ -80,13 +80,14 @@ model Settings {
 }
 
 model PanelSettings {
-  id          String        @id @default("main")
-  logoUrl     String?
-  showClock   Boolean       @default(true)
-  showWeather Boolean       @default(true)
-  showQuote   Boolean       @default(false)
-  quoteText   String?
-  screens     PanelScreen[]
+  id                  String        @id @default("main")
+  logoUrl             String?
+  showClock           Boolean       @default(true)
+  showWeather         Boolean       @default(true)
+  showQuote           Boolean       @default(false)
+  quoteText           String?
+  showSustainability  Boolean       @default(true)
+  screens             PanelScreen[]
 }
 
 model PanelScreen {

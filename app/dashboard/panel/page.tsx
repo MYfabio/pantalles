@@ -32,6 +32,7 @@ export default function PanelEditorPage() {
   const [showWeather, setShowWeather] = useState(true);
   const [showQuote, setShowQuote] = useState(false);
   const [quoteText, setQuoteText] = useState("");
+  const [showSustainability, setShowSustainability] = useState(true);
   const [screens, setScreens] = useState<Screen[]>([]);
   const [screenIds, setScreenIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,6 +60,7 @@ export default function PanelEditorPage() {
       setShowWeather(settingsData.panel?.showWeather ?? true);
       setShowQuote(settingsData.panel?.showQuote ?? false);
       setQuoteText(settingsData.panel?.quoteText || "");
+      setShowSustainability(settingsData.panel?.showSustainability ?? true);
       setScreens(screensData);
       setScreenIds(settingsData.panel?.screenIds || []);
     } catch (error) {
@@ -166,7 +168,7 @@ export default function PanelEditorPage() {
       await checkResponse(orderRes, "Ordre dels blocs");
 
       const settingsPayload = {
-        panel: { logoUrl, showClock, showWeather, showQuote, quoteText, screenIds },
+        panel: { logoUrl, showClock, showWeather, showQuote, quoteText, showSustainability, screenIds },
       };
       console.log("[PANELL DEBUG] PATCH /api/settings payload:", settingsPayload);
       const settingsRes = await fetch("/api/settings", {
@@ -267,9 +269,17 @@ export default function PanelEditorPage() {
                 onChange={(e) => setShowWeather(e.target.checked)}
               />
             </div>
-            <div className="flex items-center justify-between px-3 py-2 border rounded-lg bg-gray-50 mb-3">
+            <div className="flex items-center justify-between px-3 py-2 border rounded-lg bg-gray-50 mb-2">
               <span className="text-sm font-bold">Mostrar frase del dia</span>
               <input type="checkbox" checked={showQuote} onChange={(e) => setShowQuote(e.target.checked)} />
+            </div>
+            <div className="flex items-center justify-between px-3 py-2 border rounded-lg bg-gray-50 mb-3">
+              <span className="text-sm font-bold">Mostrar sostenibilitat</span>
+              <input
+                type="checkbox"
+                checked={showSustainability}
+                onChange={(e) => setShowSustainability(e.target.checked)}
+              />
             </div>
 
             <label className="block text-xs font-bold mb-1">Frase del dia</label>
@@ -334,7 +344,7 @@ export default function PanelEditorPage() {
             <div style={{ transform: `scale(${PREVIEW_SCALE})`, transformOrigin: "top left" }}>
               <PanelDisplay
                 blocks={previewBlocks}
-                settings={{ logoUrl, showClock, showWeather, showQuote, quoteText }}
+                settings={{ logoUrl, showClock, showWeather, showQuote, quoteText, showSustainability }}
               />
             </div>
           </div>

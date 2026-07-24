@@ -52,6 +52,7 @@ export default async function PanelPage({ params }: { params: { slug: string } }
         showWeather: panelSettings.showWeather,
         showQuote: panelSettings.showQuote,
         quoteText: panelSettings.quoteText,
+        showSustainability: panelSettings.showSustainability,
       }}
     />
   );

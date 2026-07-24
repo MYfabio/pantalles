@@ -55,7 +55,15 @@ export async function PATCH(req: NextRequest) {
 
     let panelSettings;
     if (panel) {
-      const { logoUrl: panelLogoUrl, showClock, showWeather, showQuote, quoteText, screenIds } = panel;
+      const {
+        logoUrl: panelLogoUrl,
+        showClock,
+        showWeather,
+        showQuote,
+        quoteText,
+        showSustainability,
+        screenIds,
+      } = panel;
       panelSettings = await prisma.panelSettings.update({
         where: { id: "main" },
         data: {
@@ -64,6 +72,7 @@ export async function PATCH(req: NextRequest) {
           showWeather,
           showQuote,
           quoteText,
+          showSustainability,
           ...(screenIds !== undefined && {
             screens: {
               deleteMany: {},

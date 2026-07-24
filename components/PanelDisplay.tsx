@@ -23,6 +23,45 @@ const ICONS: Record<string, string> = {
   fp: "⚙️",
 };
 
+interface SustainabilityConfig {
+  icon: string;
+  unitat: string;
+  inicial: number;
+  increment: number;
+  inici: string;
+  frequencia: "dia" | "setmana" | "mes" | "any";
+}
+
+const SUSTAINABILITY_CONFIG: Record<string, SustainabilityConfig> = {
+  aigua: { icon: "💧", unitat: "L", inicial: 12500, increment: 35, inici: "2026-09-01", frequencia: "dia" },
+  reciclatge: { icon: "♻️", unitat: "kg", inicial: 860, increment: 5, inici: "2026-09-01", frequencia: "dia" },
+  energia: { icon: "⚡", unitat: "kWh", inicial: 4250, increment: 12, inici: "2026-09-01", frequencia: "dia" },
+  arbres: { icon: "🌳", unitat: "arbres", inicial: 145, increment: 1, inici: "2026-09-15", frequencia: "setmana" },
+  co2: { icon: "🌍", unitat: "kg CO₂", inicial: 320, increment: 2, inici: "2026-09-01", frequencia: "dia" },
+};
+
+function calculaIndicador(cfg: SustainabilityConfig): number {
+  const avui = new Date();
+  const inici = new Date(cfg.inici);
+  const dies = Math.max(0, Math.floor((avui.getTime() - inici.getTime()) / (1000 * 60 * 60 * 24)));
+  let periodes = 0;
+  switch (cfg.frequencia) {
+    case "dia":
+      periodes = dies;
+      break;
+    case "setmana":
+      periodes = Math.floor(dies / 7);
+      break;
+    case "mes":
+      periodes = Math.floor(dies / 30.44);
+      break;
+    case "any":
+      periodes = Math.floor(dies / 365.25);
+      break;
+  }
+  return cfg.inicial + periodes * cfg.increment;
+}
+
 const WEATHER_CODES: Record<number, string> = {
   0: "☀️ Cel serè",
   1: "🌤️ Poc ennuvolat",
@@ -51,6 +90,7 @@ export interface PanelSettingsData {
   showWeather: boolean;
   showQuote: boolean;
   quoteText?: string | null;
+  showSustainability?: boolean;
 }
 
 function pad(n: number) {
@@ -66,6 +106,7 @@ export default function PanelDisplay({
 }) {
   const [now, setNow] = useState<Date | null>(null);
   const [weather, setWeather] = useState("Carregant temps...");
+  const [sustainabilityValues, setSustainabilityValues] = useState<Record<string, number> | null>(null);
 
   useEffect(() => {
     setNow(new Date());
@@ -95,6 +136,19 @@ export default function PanelDisplay({
       cancelled = true;
       clearInterval(id);
     };
+  }, []);
+
+  useEffect(() => {
+    const update = () => {
+      const values: Record<string, number> = {};
+      for (const key of Object.keys(SUSTAINABILITY_CONFIG)) {
+        values[key] = calculaIndicador(SUSTAINABILITY_CONFIG[key]);
+      }
+      setSustainabilityValues(values);
+    };
+    update();
+    const id = setInterval(update, 60 * 60 * 1000);
+    return () => clearInterval(id);
   }, []);
 
   const clockText = now ? `${pad(now.getHours())}:${pad(now.getMinutes())}` : "--:--";
@@ -137,6 +191,17 @@ export default function PanelDisplay({
             {weather}
           </div>
         </div>
+        {settings.showSustainability !== false && sustainabilityValues && (
+          <div className="panel-sostenibilitat">
+            {Object.entries(SUSTAINABILITY_CONFIG).map(([key, cfg]) => (
+              <div className="panel-s-item" key={key}>
+                <span className="panel-s-icon">{cfg.icon}</span>
+                <span className="panel-s-valor">{sustainabilityValues[key].toLocaleString("ca-ES")}</span>
+                <span className="panel-s-unitat">{cfg.unitat}</span>
+              </div>
+            ))}
+          </div>
+        )}
         {settings.showQuote && settings.quoteText && (
           <div className="panel-quote">&quot;{settings.quoteText}&quot;</div>
         )}
@@ -263,6 +328,36 @@ export default function PanelDisplay({
           font-size: 28px;
           margin-top: 14px;
           font-weight: 700;
+        }
+        .panel-sostenibilitat {
+          grid-column: 1 / -1;
+          margin-top: 30px;
+          display: flex;
+          gap: 24px;
+          justify-content: flex-end;
+          flex-wrap: wrap;
+        }
+        .panel-s-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: rgba(255, 255, 255, 0.15);
+          padding: 16px 24px;
+          border-radius: 20px;
+          color: #fff;
+          font-size: 28px;
+          font-weight: 700;
+          backdrop-filter: blur(10px);
+        }
+        .panel-s-icon {
+          font-size: 36px;
+        }
+        .panel-s-valor {
+          font-size: 36px;
+          font-weight: 800;
+        }
+        .panel-s-unitat {
+          opacity: 0.85;
         }
         .panel-quote {
           grid-column: 1 / -1;
