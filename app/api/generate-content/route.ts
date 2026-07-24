@@ -94,27 +94,42 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "GEMINI_API_KEY no configurada" }, { status: 500 });
   }
 
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
-      systemInstruction: SYSTEM_PROMPT,
-    });
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const userPrompt = `${DEPARTMENT_GUIDANCE[department as Department]}\n\nContingut a mostrar:\n${content}`;
 
-    const userPrompt = `${DEPARTMENT_GUIDANCE[department as Department]}\n\nContingut a mostrar:\n${content}`;
+  // Gemini deprecates/renames model ids over time; try a preferred model first
+  // and fall back to a rolling alias if it 404s.
+  const MODEL_CANDIDATES = ["gemini-2.5-flash", "gemini-flash-latest"];
+  let lastError: any = null;
 
-    const result = await model.generateContent(userPrompt);
-    const html = cleanHtml(result.response.text());
-
-    return NextResponse.json({ html });
-  } catch (error: any) {
-    console.error("ERROR GENERATE CONTENT:", {
-      message: error?.message,
-      status: error?.status ?? error?.response?.status,
-      statusText: error?.statusText,
-      details: error?.errorDetails ?? error?.response?.data,
-      stack: error?.stack,
-    });
-    return NextResponse.json({ error: "Error generant el contingut" }, { status: 500 });
+  for (const modelName of MODEL_CANDIDATES) {
+    try {
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        systemInstruction: SYSTEM_PROMPT,
+      });
+      const result = await model.generateContent(userPrompt);
+      const html = cleanHtml(result.response.text());
+      return NextResponse.json({ html });
+    } catch (error: any) {
+      lastError = error;
+      const status = error?.status ?? error?.response?.status;
+      console.error(`ERROR GENERATE CONTENT (model: ${modelName}):`, {
+        message: error?.message,
+        status,
+        statusText: error?.statusText,
+        details: error?.errorDetails ?? error?.response?.data,
+        stack: error?.stack,
+      });
+      // Only fall through to the next candidate if the model itself is
+      // unavailable (404); any other error (auth, quota, etc.) is fatal.
+      if (status !== 404) break;
+    }
   }
+
+  console.error("ERROR GENERATE CONTENT: all model candidates failed", {
+    message: lastError?.message,
+    status: lastError?.status ?? lastError?.response?.status,
+  });
+  return NextResponse.json({ error: "Error generant el contingut" }, { status: 500 });
 }

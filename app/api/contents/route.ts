@@ -8,6 +8,14 @@ export async function POST(req: NextRequest) {
   if (!session || !session.user) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
+  const authorId = (session.user as any)?.id;
+  if (!authorId) {
+    return NextResponse.json(
+      { error: "Sessió invàlida, torna a iniciar sessió" },
+      { status: 401 }
+    );
+  }
+
   const { title, body, status, screenIds, department, generatedHtml } = await req.json();
   try {
     const content = await prisma.content.create({
@@ -17,7 +25,7 @@ export async function POST(req: NextRequest) {
         status,
         department,
         generatedHtml,
-        authorId: (session.user as any).id,
+        authorId,
         screens: {
           create: ((screenIds || []) as string[]).map((screenId) => ({ screenId })),
         },

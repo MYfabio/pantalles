@@ -29,12 +29,18 @@ export const authOptions: NextAuthOptions = {
         token.role = (user as any).role;
         token.id = (user as any).id;
       }
+      // token.sub is set by NextAuth core from the user id at sign-in and
+      // persists across refreshes, so fall back to it if token.id is ever
+      // missing (e.g. a session issued before this field existed).
+      if (!token.id && token.sub) {
+        token.id = token.sub;
+      }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         (session.user as any).role = token.role;
-        (session.user as any).id = token.id;
+        (session.user as any).id = token.id ?? token.sub;
       }
       return session;
     },
