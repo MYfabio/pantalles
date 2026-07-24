@@ -62,6 +62,7 @@ export async function PATCH(req: NextRequest) {
         showQuote,
         quoteText,
         showSustainability,
+        sustainabilityImageUrl,
         screenIds,
       } = panel;
       panelSettings = await prisma.panelSettings.update({
@@ -73,6 +74,7 @@ export async function PATCH(req: NextRequest) {
           showQuote,
           quoteText,
           showSustainability,
+          sustainabilityImageUrl,
           ...(screenIds !== undefined && {
             screens: {
               deleteMany: {},

@@ -105,6 +105,22 @@ async function main() {
     },
   });
 
+  const sustainabilityIndicators = [
+    { key: "aigua", order: 0, icon: "💧", unitat: "L", valorInicial: 12500, increment: 35, dataInici: "2026-09-01", frequencia: "dia" },
+    { key: "reciclatge", order: 1, icon: "♻️", unitat: "kg", valorInicial: 860, increment: 5, dataInici: "2026-09-01", frequencia: "dia" },
+    { key: "energia", order: 2, icon: "⚡", unitat: "kWh", valorInicial: 4250, increment: 12, dataInici: "2026-09-01", frequencia: "dia" },
+    { key: "arbres", order: 3, icon: "🌳", unitat: "arbres", valorInicial: 145, increment: 1, dataInici: "2026-09-15", frequencia: "setmana" },
+    { key: "co2", order: 4, icon: "🌍", unitat: "kg CO₂", valorInicial: 320, increment: 2, dataInici: "2026-09-01", frequencia: "dia" },
+  ];
+
+  for (const indicator of sustainabilityIndicators) {
+    await prisma.sustainabilityIndicator.upsert({
+      where: { key: indicator.key },
+      update: {},
+      create: indicator,
+    });
+  }
+
   console.log("Seed completed");
 }
 

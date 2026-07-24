@@ -80,14 +80,29 @@ model Settings {
 }
 
 model PanelSettings {
-  id                  String        @id @default("main")
-  logoUrl             String?
-  showClock           Boolean       @default(true)
-  showWeather         Boolean       @default(true)
-  showQuote           Boolean       @default(false)
-  quoteText           String?
-  showSustainability  Boolean       @default(true)
-  screens             PanelScreen[]
+  id                     String        @id @default("main")
+  logoUrl                String?
+  showClock              Boolean       @default(true)
+  showWeather            Boolean       @default(true)
+  showQuote              Boolean       @default(false)
+  quoteText              String?
+  showSustainability     Boolean       @default(true)
+  sustainabilityImageUrl String?
+  screens                PanelScreen[]
+}
+
+model SustainabilityIndicator {
+  id           String   @id @default(cuid())
+  key          String   @unique
+  icon         String
+  unitat       String
+  valorInicial Float
+  increment    Float
+  dataInici    String
+  frequencia   String   @default("dia")
+  enabled      Boolean  @default(true)
+  order        Int
+  updatedAt    DateTime @updatedAt
 }
 
 model PanelScreen {
