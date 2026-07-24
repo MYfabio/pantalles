@@ -54,6 +54,18 @@ model ContentScreen {
   @@id([contentId, screenId])
 }
 
+model PanelBlock {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  enabled   Boolean  @default(true)
+  title     String
+  text      String
+  date      String
+  typeText  String
+  order     Int
+  updatedAt DateTime @updatedAt
+}
+
 model Settings {
   id             String  @id @default("main")
   schoolName     String  @default("Escola Industrial")
