@@ -17,12 +17,13 @@ export async function POST(req: NextRequest) {
         status,
         authorId: (session.user as any).id,
         screens: {
-          connect: screenIds.map((id: string) => ({ id })),
+          create: ((screenIds || []) as string[]).map((screenId) => ({ screenId })),
         },
       },
     });
     return NextResponse.json(content);
   } catch (error) {
+    console.error("ERROR CREATING CONTENT:", error);
     return NextResponse.json({ error: "Error creando contenido" }, { status: 500 });
   }
 }
@@ -35,9 +36,11 @@ export async function GET(req: NextRequest) {
   try {
     const contents = await prisma.content.findMany({
       include: { author: true, screens: true },
+      orderBy: { createdAt: "desc" },
     });
     return NextResponse.json(contents);
   } catch (error) {
     console.error("ERROR CONTENTS:", error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
+}

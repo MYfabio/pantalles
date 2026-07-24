@@ -33,16 +33,28 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const { title, body, status } = await req.json();
+  const { title, body, status, screenIds } = await req.json();
 
   try {
     const content = await prisma.content.update({
       where: { id: params.id },
-      data: { title, body, status, updatedAt: new Date() },
+      data: {
+        title,
+        body,
+        status,
+        updatedAt: new Date(),
+        ...(screenIds !== undefined && {
+          screens: {
+            deleteMany: {},
+            create: ((screenIds || []) as string[]).map((screenId) => ({ screenId })),
+          },
+        }),
+      },
     });
 
     return NextResponse.json(content);
   } catch (error) {
+    console.error("ERROR UPDATING CONTENT:", error);
     return NextResponse.json({ error: "Error actualizando contenido" }, { status: 500 });
   }
 }
