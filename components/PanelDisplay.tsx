@@ -23,26 +23,20 @@ const ICONS: Record<string, string> = {
   fp: "⚙️",
 };
 
-interface SustainabilityConfig {
+export interface SustainabilityIndicatorData {
+  key: string;
   icon: string;
   unitat: string;
-  inicial: number;
+  valorInicial: number;
   increment: number;
-  inici: string;
-  frequencia: "dia" | "setmana" | "mes" | "any";
+  dataInici: string;
+  frequencia: string;
+  enabled: boolean;
 }
 
-const SUSTAINABILITY_CONFIG: Record<string, SustainabilityConfig> = {
-  aigua: { icon: "💧", unitat: "L", inicial: 12500, increment: 35, inici: "2026-09-01", frequencia: "dia" },
-  reciclatge: { icon: "♻️", unitat: "kg", inicial: 860, increment: 5, inici: "2026-09-01", frequencia: "dia" },
-  energia: { icon: "⚡", unitat: "kWh", inicial: 4250, increment: 12, inici: "2026-09-01", frequencia: "dia" },
-  arbres: { icon: "🌳", unitat: "arbres", inicial: 145, increment: 1, inici: "2026-09-15", frequencia: "setmana" },
-  co2: { icon: "🌍", unitat: "kg CO₂", inicial: 320, increment: 2, inici: "2026-09-01", frequencia: "dia" },
-};
-
-function calculaIndicador(cfg: SustainabilityConfig): number {
+function calculaIndicador(cfg: SustainabilityIndicatorData): number {
   const avui = new Date();
-  const inici = new Date(cfg.inici);
+  const inici = new Date(cfg.dataInici);
   const dies = Math.max(0, Math.floor((avui.getTime() - inici.getTime()) / (1000 * 60 * 60 * 24)));
   let periodes = 0;
   switch (cfg.frequencia) {
@@ -59,7 +53,7 @@ function calculaIndicador(cfg: SustainabilityConfig): number {
       periodes = Math.floor(dies / 365.25);
       break;
   }
-  return cfg.inicial + periodes * cfg.increment;
+  return cfg.valorInicial + periodes * cfg.increment;
 }
 
 const WEATHER_CODES: Record<number, string> = {
@@ -91,6 +85,7 @@ export interface PanelSettingsData {
   showQuote: boolean;
   quoteText?: string | null;
   showSustainability?: boolean;
+  sustainabilityImageUrl?: string | null;
 }
 
 function pad(n: number) {
@@ -100,9 +95,11 @@ function pad(n: number) {
 export default function PanelDisplay({
   blocks,
   settings,
+  sustainabilityIndicators = [],
 }: {
   blocks: PanelBlockData[];
   settings: PanelSettingsData;
+  sustainabilityIndicators?: SustainabilityIndicatorData[];
 }) {
   const [now, setNow] = useState<Date | null>(null);
   const [weather, setWeather] = useState("Carregant temps...");
@@ -141,15 +138,15 @@ export default function PanelDisplay({
   useEffect(() => {
     const update = () => {
       const values: Record<string, number> = {};
-      for (const key of Object.keys(SUSTAINABILITY_CONFIG)) {
-        values[key] = calculaIndicador(SUSTAINABILITY_CONFIG[key]);
+      for (const indicator of sustainabilityIndicators) {
+        values[indicator.key] = calculaIndicador(indicator);
       }
       setSustainabilityValues(values);
     };
     update();
     const id = setInterval(update, 60 * 60 * 1000);
     return () => clearInterval(id);
-  }, []);
+  }, [sustainabilityIndicators]);
 
   const clockText = now ? `${pad(now.getHours())}:${pad(now.getMinutes())}` : "--:--";
   const dateText = now
@@ -193,13 +190,21 @@ export default function PanelDisplay({
         </div>
         {settings.showSustainability !== false && sustainabilityValues && (
           <div className="panel-sostenibilitat">
-            {Object.entries(SUSTAINABILITY_CONFIG).map(([key, cfg]) => (
-              <div className="panel-s-item" key={key}>
-                <span className="panel-s-icon">{cfg.icon}</span>
-                <span className="panel-s-valor">{sustainabilityValues[key].toLocaleString("ca-ES")}</span>
-                <span className="panel-s-unitat">{cfg.unitat}</span>
-              </div>
-            ))}
+            {settings.sustainabilityImageUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={settings.sustainabilityImageUrl} alt="" className="panel-s-image" />
+            )}
+            {sustainabilityIndicators
+              .filter((cfg) => cfg.enabled)
+              .map((cfg) => (
+                <div className="panel-s-item" key={cfg.key}>
+                  <span className="panel-s-icon">{cfg.icon}</span>
+                  <span className="panel-s-valor">
+                    {(sustainabilityValues[cfg.key] ?? 0).toLocaleString("ca-ES")}
+                  </span>
+                  <span className="panel-s-unitat">{cfg.unitat}</span>
+                </div>
+              ))}
           </div>
         )}
         {settings.showQuote && settings.quoteText && (
@@ -336,6 +341,13 @@ export default function PanelDisplay({
           gap: 24px;
           justify-content: flex-end;
           flex-wrap: wrap;
+        }
+        .panel-s-image {
+          height: 68px;
+          width: 68px;
+          object-fit: cover;
+          border-radius: 14px;
+          border: 2px solid rgba(255, 255, 255, 0.4);
         }
         .panel-s-item {
           display: flex;

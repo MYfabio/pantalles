@@ -1,6 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
-import PanelDisplay, { PanelBlockData, PanelSettingsData } from "@/components/PanelDisplay";
+import PanelDisplay, {
+  PanelBlockData,
+  PanelSettingsData,
+  SustainabilityIndicatorData,
+} from "@/components/PanelDisplay";
 
 const SCREEN_WIDTH = 1080;
 const SCREEN_HEIGHT = 1920;
@@ -8,9 +12,11 @@ const SCREEN_HEIGHT = 1920;
 export default function PanelFullscreenFrame({
   blocks,
   settings,
+  sustainabilityIndicators,
 }: {
   blocks: PanelBlockData[];
   settings: PanelSettingsData;
+  sustainabilityIndicators?: SustainabilityIndicatorData[];
 }) {
   const [scale, setScale] = useState(1);
 
@@ -26,7 +32,11 @@ export default function PanelFullscreenFrame({
   return (
     <div className="w-screen h-screen flex items-center justify-center bg-black overflow-hidden">
       <div style={{ transform: `scale(${scale})` }}>
-        <PanelDisplay blocks={blocks} settings={settings} />
+        <PanelDisplay
+          blocks={blocks}
+          settings={settings}
+          sustainabilityIndicators={sustainabilityIndicators}
+        />
       </div>
     </div>
   );

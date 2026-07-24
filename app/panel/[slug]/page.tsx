@@ -31,7 +31,10 @@ export default async function PanelPage({ params }: { params: { slug: string } }
     );
   }
 
-  const blocks = await prisma.panelBlock.findMany({ orderBy: { order: "asc" } });
+  const [blocks, sustainabilityIndicators] = await Promise.all([
+    prisma.panelBlock.findMany({ orderBy: { order: "asc" } }),
+    prisma.sustainabilityIndicator.findMany({ orderBy: { order: "asc" } }),
+  ]);
 
   const blockData = blocks.map((b) => ({
     key: b.key,
@@ -43,9 +46,21 @@ export default async function PanelPage({ params }: { params: { slug: string } }
     imageUrl: b.imageUrl,
   }));
 
+  const indicatorData = sustainabilityIndicators.map((i) => ({
+    key: i.key,
+    icon: i.icon,
+    unitat: i.unitat,
+    valorInicial: i.valorInicial,
+    increment: i.increment,
+    dataInici: i.dataInici,
+    frequencia: i.frequencia,
+    enabled: i.enabled,
+  }));
+
   return (
     <PanelFullscreenFrame
       blocks={blockData}
+      sustainabilityIndicators={indicatorData}
       settings={{
         logoUrl: panelSettings.logoUrl,
         showClock: panelSettings.showClock,
@@ -53,6 +68,7 @@ export default async function PanelPage({ params }: { params: { slug: string } }
         showQuote: panelSettings.showQuote,
         quoteText: panelSettings.quoteText,
         showSustainability: panelSettings.showSustainability,
+        sustainabilityImageUrl: panelSettings.sustainabilityImageUrl,
       }}
     />
   );
