@@ -23,7 +23,7 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
- callbacks: {
+  callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.role = (user as any).role;
@@ -39,3 +39,4 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
+};
