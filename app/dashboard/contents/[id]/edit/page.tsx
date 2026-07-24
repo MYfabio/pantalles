@@ -3,10 +3,18 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 
+interface Screen {
+  id: string;
+  name: string;
+  location: string | null;
+}
+
 export default function EditContentPage() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [status, setStatus] = useState("DRAFT");
+  const [screens, setScreens] = useState<Screen[]>([]);
+  const [screenIds, setScreenIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const router = useRouter();
@@ -14,13 +22,19 @@ export default function EditContentPage() {
   const id = params.id as string;
 
   useEffect(() => {
-    const fetchContent = async () => {
+    const fetchData = async () => {
       try {
-        const res = await fetch(`/api/contents/${id}`);
-        const data = await res.json();
-        setTitle(data.title);
-        setBody(data.body);
-        setStatus(data.status);
+        const [contentRes, screensRes] = await Promise.all([
+          fetch(`/api/contents/${id}`),
+          fetch("/api/screens"),
+        ]);
+        const content = await contentRes.json();
+        const screensData = await screensRes.json();
+        setTitle(content.title);
+        setBody(content.body || "");
+        setStatus(content.status);
+        setScreenIds((content.screens || []).map((s: { screenId: string }) => s.screenId));
+        setScreens(screensData);
       } catch (error) {
         alert("Error cargando contenido");
       } finally {
@@ -28,8 +42,14 @@ export default function EditContentPage() {
       }
     };
 
-    fetchContent();
+    fetchData();
   }, [id]);
+
+  const toggleScreen = (screenId: string) => {
+    setScreenIds((prev) =>
+      prev.includes(screenId) ? prev.filter((s) => s !== screenId) : [...prev, screenId]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +59,7 @@ export default function EditContentPage() {
       const res = await fetch(`/api/contents/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, body, status }),
+        body: JSON.stringify({ title, body, status, screenIds }),
       });
 
       if (res.ok) {
@@ -98,6 +118,26 @@ export default function EditContentPage() {
               <option value="PUBLISHED">Publicat</option>
               <option value="SCHEDULED">Programat</option>
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Pantalles</label>
+            <div className="border border-gray-300 rounded-lg p-3 space-y-2 max-h-48 overflow-y-auto">
+              {screens.map((screen) => (
+                <label key={screen.id} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={screenIds.includes(screen.id)}
+                    onChange={() => toggleScreen(screen.id)}
+                  />
+                  {screen.name}
+                  {screen.location && <span className="text-gray-400">({screen.location})</span>}
+                </label>
+              ))}
+              {screens.length === 0 && (
+                <div className="text-sm text-gray-400">No hi ha pantalles disponibles</div>
+              )}
+            </div>
           </div>
 
           <div className="flex gap-2 pt-4">

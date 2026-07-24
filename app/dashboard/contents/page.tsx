@@ -33,8 +33,12 @@ export default function ContentsPage() {
     if (!confirm("Estàs segur?")) return;
 
     try {
-      await fetch(`/api/contents/${id}`, { method: "DELETE" });
-      setContents(contents.filter((c) => c.id !== id));
+      const res = await fetch(`/api/contents/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setContents(contents.filter((c) => c.id !== id));
+      } else {
+        alert("Error eliminando");
+      }
     } catch (error) {
       alert("Error eliminando");
     }

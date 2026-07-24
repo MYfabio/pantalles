@@ -1,24 +1,51 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+
+interface Screen {
+  id: string;
+  name: string;
+  location: string | null;
+}
 
 export default function NewContentPage() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [status, setStatus] = useState("DRAFT");
+  const [screens, setScreens] = useState<Screen[]>([]);
+  const [screenIds, setScreenIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const fetchScreens = async () => {
+      try {
+        const res = await fetch("/api/screens");
+        const data = await res.json();
+        setScreens(data);
+      } catch (error) {
+        console.error("Error carregant pantalles:", error);
+      }
+    };
+    fetchScreens();
+  }, []);
+
+  const toggleScreen = (id: string) => {
+    setScreenIds((prev) =>
+      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       const res = await fetch("/api/contents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, body, status, screenIds: [] }),
+        body: JSON.stringify({ title, body, status, screenIds }),
       });
 
       if (res.ok) {
@@ -75,6 +102,26 @@ export default function NewContentPage() {
               <option value="PUBLISHED">Publicat</option>
               <option value="SCHEDULED">Programat</option>
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Pantalles</label>
+            <div className="border border-gray-300 rounded-lg p-3 space-y-2 max-h-48 overflow-y-auto">
+              {screens.map((screen) => (
+                <label key={screen.id} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={screenIds.includes(screen.id)}
+                    onChange={() => toggleScreen(screen.id)}
+                  />
+                  {screen.name}
+                  {screen.location && <span className="text-gray-400">({screen.location})</span>}
+                </label>
+              ))}
+              {screens.length === 0 && (
+                <div className="text-sm text-gray-400">No hi ha pantalles disponibles</div>
+              )}
+            </div>
           </div>
 
           <div className="flex gap-2 pt-4">
