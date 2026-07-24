@@ -18,6 +18,13 @@ import PanelDisplay from "@/components/PanelDisplay";
 
 const PREVIEW_SCALE = 400 / 1080;
 
+interface Screen {
+  id: string;
+  name: string;
+  slug: string;
+  location: string | null;
+}
+
 export default function PanelEditorPage() {
   const [blocks, setBlocks] = useState<EditableBlock[]>([]);
   const [logoUrl, setLogoUrl] = useState("");
@@ -25,6 +32,8 @@ export default function PanelEditorPage() {
   const [showWeather, setShowWeather] = useState(true);
   const [showQuote, setShowQuote] = useState(false);
   const [quoteText, setQuoteText] = useState("");
+  const [screens, setScreens] = useState<Screen[]>([]);
+  const [screenIds, setScreenIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -33,18 +42,22 @@ export default function PanelEditorPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [blocksRes, settingsRes] = await Promise.all([
+      const [blocksRes, settingsRes, screensRes] = await Promise.all([
         fetch("/api/panel-blocks"),
         fetch("/api/settings"),
+        fetch("/api/screens"),
       ]);
       const blocksData = await blocksRes.json();
       const settingsData = await settingsRes.json();
+      const screensData = await screensRes.json();
       setBlocks(blocksData);
       setLogoUrl(settingsData.panel?.logoUrl || "");
       setShowClock(settingsData.panel?.showClock ?? true);
       setShowWeather(settingsData.panel?.showWeather ?? true);
       setShowQuote(settingsData.panel?.showQuote ?? false);
       setQuoteText(settingsData.panel?.quoteText || "");
+      setScreens(screensData);
+      setScreenIds(settingsData.panel?.screenIds || []);
     } catch (error) {
       alert("Error carregant el panell");
     } finally {
@@ -58,6 +71,10 @@ export default function PanelEditorPage() {
 
   const updateBlock = (id: string, patch: Partial<EditableBlock>) => {
     setBlocks((prev) => prev.map((b) => (b.id === id ? { ...b, ...patch } : b)));
+  };
+
+  const toggleScreen = (id: string) => {
+    setScreenIds((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]));
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -101,7 +118,7 @@ export default function PanelEditorPage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          panel: { logoUrl, showClock, showWeather, showQuote, quoteText },
+          panel: { logoUrl, showClock, showWeather, showQuote, quoteText, screenIds },
         }),
       });
 
@@ -207,6 +224,28 @@ export default function PanelEditorPage() {
                 ))}
             </SortableContext>
           </DndContext>
+
+          <div className="bg-white rounded-xl border p-4 mt-4">
+            <h2 className="text-base font-medium mb-3" style={{ color: "#a00842" }}>
+              Pantalles on es mostra
+            </h2>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {screens.map((screen) => (
+                <label key={screen.id} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={screenIds.includes(screen.id)}
+                    onChange={() => toggleScreen(screen.id)}
+                  />
+                  {screen.name}
+                  {screen.location && <span className="text-gray-400">({screen.location})</span>}
+                </label>
+              ))}
+              {screens.length === 0 && (
+                <div className="text-sm text-gray-400">No hi ha pantalles disponibles</div>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="flex justify-center items-start">

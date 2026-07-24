@@ -28,6 +28,7 @@ model Screen {
   createdAt  DateTime        @default(now())
   updatedAt  DateTime        @updatedAt
   contents   ContentScreen[]
+  panelScreens PanelScreen[]
 }
 
 model Content {
@@ -78,10 +79,20 @@ model Settings {
 }
 
 model PanelSettings {
-  id          String  @id @default("main")
+  id          String        @id @default("main")
   logoUrl     String?
-  showClock   Boolean @default(true)
-  showWeather Boolean @default(true)
-  showQuote   Boolean @default(false)
+  showClock   Boolean       @default(true)
+  showWeather Boolean       @default(true)
+  showQuote   Boolean       @default(false)
   quoteText   String?
+  screens     PanelScreen[]
+}
+
+model PanelScreen {
+  panelSettingsId String
+  screenId        String
+  panelSettings   PanelSettings @relation(fields: [panelSettingsId], references: [id], onDelete: Cascade)
+  screen          Screen        @relation(fields: [screenId], references: [id], onDelete: Cascade)
+
+  @@id([panelSettingsId, screenId])
 }

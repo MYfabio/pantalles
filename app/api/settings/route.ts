@@ -3,6 +3,11 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+function toPanelJson(panel: { screens: { screenId: string }[] } & Record<string, any>) {
+  const { screens, ...rest } = panel;
+  return { ...rest, screenIds: screens.map((s) => s.screenId) };
+}
+
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session) {
@@ -12,9 +17,14 @@ export async function GET() {
   try {
     const [settings, panel] = await Promise.all([
       prisma.settings.upsert({ where: { id: "main" }, update: {}, create: {} }),
-      prisma.panelSettings.upsert({ where: { id: "main" }, update: {}, create: {} }),
+      prisma.panelSettings.upsert({
+        where: { id: "main" },
+        update: {},
+        create: {},
+        include: { screens: true },
+      }),
     ]);
-    return NextResponse.json({ ...settings, panel });
+    return NextResponse.json({ ...settings, panel: toPanelJson(panel) });
   } catch (error) {
     console.error("ERROR SETTINGS:", error);
     return NextResponse.json({ error: "Error obtenint la configuracio" }, { status: 500 });
@@ -36,21 +46,36 @@ export async function PATCH(req: NextRequest) {
       create: { id: "main", schoolName, primaryColor, secondaryColor, accentColor, logoUrl },
     });
 
-    let panelSettings = await prisma.panelSettings.upsert({
-      where: { id: "main" },
-      update: {},
-      create: {},
-    });
+    await prisma.panelSettings.upsert({ where: { id: "main" }, update: {}, create: {} });
 
+    let panelSettings;
     if (panel) {
-      const { logoUrl: panelLogoUrl, showClock, showWeather, showQuote, quoteText } = panel;
+      const { logoUrl: panelLogoUrl, showClock, showWeather, showQuote, quoteText, screenIds } = panel;
       panelSettings = await prisma.panelSettings.update({
         where: { id: "main" },
-        data: { logoUrl: panelLogoUrl, showClock, showWeather, showQuote, quoteText },
+        data: {
+          logoUrl: panelLogoUrl,
+          showClock,
+          showWeather,
+          showQuote,
+          quoteText,
+          ...(screenIds !== undefined && {
+            screens: {
+              deleteMany: {},
+              create: ((screenIds || []) as string[]).map((screenId) => ({ screenId })),
+            },
+          }),
+        },
+        include: { screens: true },
+      });
+    } else {
+      panelSettings = await prisma.panelSettings.findUniqueOrThrow({
+        where: { id: "main" },
+        include: { screens: true },
       });
     }
 
-    return NextResponse.json({ ...settings, panel: panelSettings });
+    return NextResponse.json({ ...settings, panel: toPanelJson(panelSettings) });
   } catch (error) {
     console.error("ERROR UPDATING SETTINGS:", error);
     return NextResponse.json({ error: "Error actualitzant la configuracio" }, { status: 500 });
