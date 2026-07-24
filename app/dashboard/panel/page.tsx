@@ -50,6 +50,8 @@ export default function PanelEditorPage() {
       const blocksData = await blocksRes.json();
       const settingsData = await settingsRes.json();
       const screensData = await screensRes.json();
+      // TEMP DEBUG LOGGING - remove once the save-persistence issue is confirmed fixed.
+      console.log("[PANELL DEBUG] GET /api/panel-blocks response on load:", blocksData);
       setBlocks(blocksData);
       setLogoUrl(settingsData.panel?.logoUrl || "");
       setShowClock(settingsData.panel?.showClock ?? true);
@@ -106,36 +108,51 @@ export default function PanelEditorPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
+      // TEMP DEBUG LOGGING - remove once the save-persistence issue is confirmed fixed.
+      console.log("[PANELL DEBUG] blocks state at click time:", JSON.parse(JSON.stringify(blocks)));
+
       await Promise.all(
-        blocks.map((b) =>
-          fetch(`/api/panel-blocks/${b.id}`, {
+        blocks.map((b) => {
+          const payload = {
+            enabled: b.enabled,
+            title: b.title,
+            text: b.text,
+            date: b.date,
+            typeText: b.typeText,
+            imageUrl: b.imageUrl,
+          };
+          console.log(`[PANELL DEBUG] PATCH /api/panel-blocks/${b.id} (${b.key}) payload:`, payload);
+          return fetch(`/api/panel-blocks/${b.id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              enabled: b.enabled,
-              title: b.title,
-              text: b.text,
-              date: b.date,
-              typeText: b.typeText,
-              imageUrl: b.imageUrl,
-            }),
-          }).then((res) => checkResponse(res, `Bloc "${b.key}"`))
-        )
+            body: JSON.stringify(payload),
+          })
+            .then((res) => checkResponse(res, `Bloc "${b.key}"`))
+            .then(async (res) => {
+              const data = await res.clone().json();
+              console.log(`[PANELL DEBUG] response for ${b.key}:`, data);
+              return res;
+            });
+        })
       );
 
+      const orderPayload = { blocks: blocks.map((b) => ({ id: b.id, order: b.order })) };
+      console.log("[PANELL DEBUG] PATCH /api/panel-blocks (order) payload:", orderPayload);
       const orderRes = await fetch("/api/panel-blocks", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ blocks: blocks.map((b) => ({ id: b.id, order: b.order })) }),
+        body: JSON.stringify(orderPayload),
       });
       await checkResponse(orderRes, "Ordre dels blocs");
 
+      const settingsPayload = {
+        panel: { logoUrl, showClock, showWeather, showQuote, quoteText, screenIds },
+      };
+      console.log("[PANELL DEBUG] PATCH /api/settings payload:", settingsPayload);
       const settingsRes = await fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          panel: { logoUrl, showClock, showWeather, showQuote, quoteText, screenIds },
-        }),
+        body: JSON.stringify(settingsPayload),
       });
       await checkResponse(settingsRes, "Configuracio del panell");
 
