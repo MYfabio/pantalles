@@ -42,6 +42,7 @@ export interface PanelBlockData {
   text: string;
   date: string;
   typeText: string;
+  imageUrl?: string | null;
 }
 
 export interface PanelSettingsData {
@@ -107,6 +108,7 @@ export default function PanelDisplay({
     : "Carregant...";
 
   const active = blocks.filter((b) => b.enabled && (b.title || b.text || b.date || b.typeText));
+  const isFullscreenSingle = active.length === 1;
   const count = active.length || 1;
   const columns = count === 1 ? 1 : 2;
   let rows = "1fr";
@@ -146,6 +148,31 @@ export default function PanelDisplay({
       >
         {active.length === 0 ? (
           <div className="panel-empty">Activa o omple almenys un bloc.</div>
+        ) : isFullscreenSingle ? (
+          (() => {
+            const item = active[0];
+            const cardStyle = { ["--accent" as string]: COLORS[item.key] } as React.CSSProperties;
+            return (
+              <article className="panel-card panel-card-fullscreen" style={cardStyle}>
+                {item.imageUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={item.imageUrl} alt="" className="panel-card-fullscreen-image" />
+                )}
+                <div className="panel-card-fullscreen-body">
+                  <div className="panel-card-head">
+                    <span className="panel-badge">{LABELS[item.key]}</span>
+                    <span className="panel-icon">{ICONS[item.key]}</span>
+                  </div>
+                  {item.title && <h2>{item.title}</h2>}
+                  {item.text && <p>{item.text}</p>}
+                  <div className="panel-meta">
+                    {item.date ? <span className="panel-date-pill">{item.date}</span> : <span />}
+                    {item.typeText && <span className="panel-type">{item.typeText}</span>}
+                  </div>
+                </div>
+              </article>
+            );
+          })()
         ) : (
           active.map((item, index) => {
             const spanFull = (count === 3 && index === 0) || (count === 5 && item.key === "general");
@@ -162,6 +189,10 @@ export default function PanelDisplay({
                   </div>
                   {item.title && <h3>{item.title}</h3>}
                   {item.text && <p>{item.text}</p>}
+                  {item.imageUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={item.imageUrl} alt="" className="panel-card-image" />
+                  )}
                 </div>
                 <div className="panel-meta">
                   {item.date ? <span className="panel-date-pill">{item.date}</span> : <span />}
@@ -305,6 +336,42 @@ export default function PanelDisplay({
           margin: 0;
           font-size: 26px;
           line-height: 1.28;
+          color: #444;
+        }
+        .panel-card-image {
+          width: 100%;
+          max-height: 220px;
+          object-fit: cover;
+          border-radius: 16px;
+          margin-top: 14px;
+        }
+        .panel-card-fullscreen {
+          padding: 0;
+          display: flex;
+          flex-direction: column;
+        }
+        .panel-card-fullscreen-image {
+          width: 100%;
+          height: 55%;
+          object-fit: cover;
+        }
+        .panel-card-fullscreen-body {
+          flex: 1;
+          min-height: 0;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          padding: 48px 56px;
+        }
+        .panel-card-fullscreen h2 {
+          margin: 28px 0 20px;
+          font-size: 88px;
+          line-height: 1.05;
+        }
+        .panel-card-fullscreen p {
+          margin: 0;
+          font-size: 42px;
+          line-height: 1.35;
           color: #444;
         }
         .panel-meta {

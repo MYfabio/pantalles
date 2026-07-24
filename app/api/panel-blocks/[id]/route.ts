@@ -9,12 +9,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: "No autoritzat" }, { status: 401 });
   }
 
-  const { enabled, title, text, date, typeText } = await req.json();
+  const { enabled, title, text, date, typeText, imageUrl } = await req.json();
 
   try {
     const block = await prisma.panelBlock.update({
       where: { id: params.id },
-      data: { enabled, title, text, date, typeText },
+      data: { enabled, title, text, date, typeText, imageUrl },
     });
     return NextResponse.json(block);
   } catch (error: any) {

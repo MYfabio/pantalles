@@ -117,6 +117,7 @@ export default function PanelEditorPage() {
               text: b.text,
               date: b.date,
               typeText: b.typeText,
+              imageUrl: b.imageUrl,
             }),
           }).then((res) => checkResponse(res, `Bloc "${b.key}"`))
         )
@@ -158,6 +159,7 @@ export default function PanelEditorPage() {
       text: b.text,
       date: b.date,
       typeText: b.typeText,
+      imageUrl: b.imageUrl,
     }));
 
   return (

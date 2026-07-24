@@ -40,6 +40,7 @@ export default async function PanelPage({ params }: { params: { slug: string } }
     text: b.text,
     date: b.date,
     typeText: b.typeText,
+    imageUrl: b.imageUrl,
   }));
 
   return (
