@@ -24,8 +24,13 @@ export async function POST(req: NextRequest) {
       },
     });
     return NextResponse.json(content);
-  } catch (error) {
-    console.error("ERROR CREATING CONTENT:", error);
+  } catch (error: any) {
+    console.error("ERROR CREATING CONTENT:", {
+      message: error?.message,
+      code: error?.code,
+      meta: error?.meta,
+      stack: error?.stack,
+    });
     return NextResponse.json({ error: "Error creando contenido" }, { status: 500 });
   }
 }

@@ -107,8 +107,14 @@ export async function POST(req: NextRequest) {
     const html = cleanHtml(result.response.text());
 
     return NextResponse.json({ html });
-  } catch (error) {
-    console.error("ERROR GENERATE CONTENT:", error);
+  } catch (error: any) {
+    console.error("ERROR GENERATE CONTENT:", {
+      message: error?.message,
+      status: error?.status ?? error?.response?.status,
+      statusText: error?.statusText,
+      details: error?.errorDetails ?? error?.response?.data,
+      stack: error?.stack,
+    });
     return NextResponse.json({ error: "Error generant el contingut" }, { status: 500 });
   }
 }
