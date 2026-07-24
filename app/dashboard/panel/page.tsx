@@ -36,6 +36,7 @@ export default function PanelEditorPage() {
   const [screenIds, setScreenIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -73,6 +74,25 @@ export default function PanelEditorPage() {
 
   const updateBlock = (id: string, patch: Partial<EditableBlock>) => {
     setBlocks((prev) => prev.map((b) => (b.id === id ? { ...b, ...patch } : b)));
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingLogo(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Error pujant el logotip");
+      setLogoUrl(data.url);
+    } catch (error: any) {
+      alert(error?.message || "Error pujant el logotip");
+    } finally {
+      setUploadingLogo(false);
+      e.target.value = "";
+    }
   };
 
   const toggleScreen = (id: string) => {
@@ -208,7 +228,35 @@ export default function PanelEditorPage() {
               Capçalera
             </h2>
 
-            <label className="block text-xs font-bold mb-1">URL del logotip</label>
+            <label className="block text-xs font-bold mb-1">Logotip de la capçalera</label>
+            {logoUrl && (
+              <div className="relative mb-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={logoUrl}
+                  alt=""
+                  className="w-full h-20 object-contain bg-gray-50 rounded-lg border"
+                />
+                <button
+                  type="button"
+                  onClick={() => setLogoUrl("")}
+                  className="absolute top-1 right-1 bg-white/90 text-red-600 text-xs font-medium px-2 py-1 rounded"
+                >
+                  Eliminar
+                </button>
+              </div>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleLogoUpload}
+              disabled={uploadingLogo}
+              className="w-full text-xs mb-2"
+            />
+            {uploadingLogo && <div className="text-xs text-gray-400 mb-2">Pujant logotip...</div>}
+            <label className="block text-xs font-bold mb-1">
+              O enganxa una URL <span className="text-gray-400 font-normal">(opcional)</span>
+            </label>
             <input
               type="text"
               value={logoUrl}
