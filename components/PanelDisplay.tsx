@@ -317,15 +317,17 @@ export default function PanelDisplay({
         .panel-date-pill {
           background: #d9d9d9;
           border-radius: 14px;
-          padding: 8px 14px;
-          font-size: 20px;
+          padding: 10px 18px;
+          font-size: 28px;
           font-weight: 700;
+          white-space: nowrap;
         }
         .panel-type {
           color: var(--accent);
-          font-size: 18px;
+          font-size: 24px;
           font-weight: 800;
           text-transform: uppercase;
+          white-space: nowrap;
         }
         .panel-bottom {
           background: #a00842;
