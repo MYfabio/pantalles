@@ -8,8 +8,15 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   const screens = await prisma.screen.findMany();
-  const contents = await prisma.content.findMany({ orderBy: { createdAt: "desc" }, take: 10 });
-  const published = contents.filter(c => c.status === "PUBLISHED").length;
+  const blocks = await prisma.panelBlock.findMany({ orderBy: { order: "asc" } });
+  const activeBlocks = blocks.filter((b) => b.enabled).length;
+  const panelSettings = await prisma.panelSettings.upsert({
+    where: { id: "main" },
+    update: {},
+    create: {},
+    include: { screens: true },
+  });
+  const screensWithPanel = panelSettings.screens.length;
 
   return (
     <div className="p-6">
@@ -23,33 +30,23 @@ export default async function DashboardPage() {
           <div className="text-2xl font-bold mt-1">{screens.length}</div>
         </div>
         <div className="bg-white rounded-xl border p-4">
-          <div className="text-xs text-gray-500">Continguts</div>
-          <div className="text-2xl font-bold mt-1">{contents.length}</div>
+          <div className="text-xs text-gray-500">Blocs actius del panell</div>
+          <div className="text-2xl font-bold mt-1">{activeBlocks} / {blocks.length}</div>
         </div>
         <div className="bg-white rounded-xl border p-4">
-          <div className="text-xs text-gray-500">Publicats</div>
-          <div className="text-2xl font-bold mt-1">{published}</div>
+          <div className="text-xs text-gray-500">Pantalles amb panell actiu</div>
+          <div className="text-2xl font-bold mt-1">{screensWithPanel}</div>
         </div>
       </div>
       <h2 className="text-sm font-medium mb-3">Pantalles</h2>
-      <div className="grid grid-cols-2 gap-3 mb-6">
+      <div className="grid grid-cols-2 gap-3">
         {screens.map(s => (
           <div key={s.id} className="bg-white rounded-xl border p-4">
             <div className="font-medium">{s.name}</div>
             <div className="text-xs text-gray-400">{s.location}</div>
-            <a href={"/display/" + s.slug} target="_blank" className="text-xs mt-2 inline-block" style={{ color: "#4a8abf" }}>Vista publica</a>
+            <a href={"/panel/" + s.slug} target="_blank" className="text-xs mt-2 inline-block" style={{ color: "#4a8abf" }}>Vista publica</a>
           </div>
         ))}
-      </div>
-      <h2 className="text-sm font-medium mb-3">Continguts recents</h2>
-      <div className="bg-white rounded-xl border">
-        {contents.map(c => (
-          <div key={c.id} className="flex items-center justify-between px-4 py-3 border-b last:border-0">
-            <div className="text-sm">{c.title}</div>
-            <span className={"text-xs px-2 py-0.5 rounded-full " + (c.status === "PUBLISHED" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500")}>{c.status}</span>
-          </div>
-        ))}
-        {contents.length === 0 && <div className="py-8 text-center text-gray-400 text-sm">Cap contingut</div>}
       </div>
     </div>
   );
