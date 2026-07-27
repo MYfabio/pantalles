@@ -14,6 +14,9 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import SortableBlockEditor, { EditableBlock } from "@/components/panel/SortableBlockEditor";
+import SustainabilityModuleEditor, {
+  EditableIndicator,
+} from "@/components/panel/SustainabilityModuleEditor";
 import PanelDisplay from "@/components/PanelDisplay";
 
 const PREVIEW_SCALE = 400 / 1080;
@@ -33,25 +36,30 @@ export default function PanelEditorPage() {
   const [showQuote, setShowQuote] = useState(false);
   const [quoteText, setQuoteText] = useState("");
   const [showSustainability, setShowSustainability] = useState(true);
+  const [sustainabilityImageUrl, setSustainabilityImageUrl] = useState("");
+  const [sustainabilityIndicators, setSustainabilityIndicators] = useState<EditableIndicator[]>([]);
   const [screens, setScreens] = useState<Screen[]>([]);
   const [screenIds, setScreenIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingSustainabilityImage, setUploadingSustainabilityImage] = useState(false);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [blocksRes, settingsRes, screensRes] = await Promise.all([
+      const [blocksRes, settingsRes, screensRes, sustainabilityRes] = await Promise.all([
         fetch("/api/panel-blocks", { cache: "no-store" }),
         fetch("/api/settings", { cache: "no-store" }),
         fetch("/api/screens", { cache: "no-store" }),
+        fetch("/api/sustainability", { cache: "no-store" }),
       ]);
       const blocksData = await blocksRes.json();
       const settingsData = await settingsRes.json();
       const screensData = await screensRes.json();
+      const sustainabilityData = await sustainabilityRes.json();
       // TEMP DEBUG LOGGING - remove once the save-persistence issue is confirmed fixed.
       console.log("[PANELL DEBUG] GET /api/panel-blocks response on load:", blocksData);
       setBlocks(blocksData);
@@ -61,6 +69,8 @@ export default function PanelEditorPage() {
       setShowQuote(settingsData.panel?.showQuote ?? false);
       setQuoteText(settingsData.panel?.quoteText || "");
       setShowSustainability(settingsData.panel?.showSustainability ?? true);
+      setSustainabilityImageUrl(settingsData.panel?.sustainabilityImageUrl || "");
+      setSustainabilityIndicators(sustainabilityData);
       setScreens(screensData);
       setScreenIds(settingsData.panel?.screenIds || []);
     } catch (error) {
@@ -76,6 +86,31 @@ export default function PanelEditorPage() {
 
   const updateBlock = (id: string, patch: Partial<EditableBlock>) => {
     setBlocks((prev) => prev.map((b) => (b.id === id ? { ...b, ...patch } : b)));
+  };
+
+  const updateIndicator = (id: string, patch: Partial<EditableIndicator>) => {
+    setSustainabilityIndicators((prev) =>
+      prev.map((i) => (i.id === id ? { ...i, ...patch } : i))
+    );
+  };
+
+  const handleSustainabilityImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingSustainabilityImage(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Error pujant la imatge");
+      setSustainabilityImageUrl(data.url);
+    } catch (error: any) {
+      alert(error?.message || "Error pujant la imatge");
+    } finally {
+      setUploadingSustainabilityImage(false);
+      e.target.value = "";
+    }
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -167,8 +202,35 @@ export default function PanelEditorPage() {
       });
       await checkResponse(orderRes, "Ordre dels blocs");
 
+      await Promise.all(
+        sustainabilityIndicators.map((ind) =>
+          fetch(`/api/sustainability/${ind.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              enabled: ind.enabled,
+              icon: ind.icon,
+              unitat: ind.unitat,
+              valorInicial: ind.valorInicial,
+              increment: ind.increment,
+              dataInici: ind.dataInici,
+              frequencia: ind.frequencia,
+            }),
+          }).then((res) => checkResponse(res, `Indicador "${ind.key}"`))
+        )
+      );
+
       const settingsPayload = {
-        panel: { logoUrl, showClock, showWeather, showQuote, quoteText, showSustainability, screenIds },
+        panel: {
+          logoUrl,
+          showClock,
+          showWeather,
+          showQuote,
+          quoteText,
+          showSustainability,
+          sustainabilityImageUrl,
+          screenIds,
+        },
       };
       console.log("[PANELL DEBUG] PATCH /api/settings payload:", settingsPayload);
       const settingsRes = await fetch("/api/settings", {
@@ -309,6 +371,15 @@ export default function PanelEditorPage() {
             </SortableContext>
           </DndContext>
 
+          <SustainabilityModuleEditor
+            indicators={sustainabilityIndicators}
+            onChangeIndicator={updateIndicator}
+            imageUrl={sustainabilityImageUrl}
+            onImageUpload={handleSustainabilityImageUpload}
+            onImageRemove={() => setSustainabilityImageUrl("")}
+            uploadingImage={uploadingSustainabilityImage}
+          />
+
           <div className="bg-white rounded-xl border p-4 mt-4">
             <h2 className="text-base font-medium mb-3" style={{ color: "#a00842" }}>
               Pantalles on es mostra
@@ -344,7 +415,16 @@ export default function PanelEditorPage() {
             <div style={{ transform: `scale(${PREVIEW_SCALE})`, transformOrigin: "top left" }}>
               <PanelDisplay
                 blocks={previewBlocks}
-                settings={{ logoUrl, showClock, showWeather, showQuote, quoteText, showSustainability }}
+                sustainabilityIndicators={sustainabilityIndicators}
+                settings={{
+                  logoUrl,
+                  showClock,
+                  showWeather,
+                  showQuote,
+                  quoteText,
+                  showSustainability,
+                  sustainabilityImageUrl,
+                }}
               />
             </div>
           </div>

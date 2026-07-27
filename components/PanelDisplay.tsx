@@ -302,8 +302,8 @@ export default function PanelDisplay({
           align-items: center;
         }
         .panel-logo-area img {
-          max-width: 300px;
-          max-height: 120px;
+          max-width: 460px;
+          max-height: 200px;
           object-fit: contain;
         }
         .panel-logo-placeholder {
