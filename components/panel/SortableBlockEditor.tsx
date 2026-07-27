@@ -183,9 +183,9 @@ export default function SortableBlockEditor({
               <button
                 type="button"
                 onClick={() => onChange(block.id, { imageUrl: "" })}
-                className="absolute top-1 right-1 bg-white/90 text-red-600 text-xs font-medium px-2 py-1 rounded"
+                className="absolute top-1.5 right-1.5 bg-white text-red-600 text-xs font-bold px-2 py-1 rounded shadow-md border border-red-200"
               >
-                Eliminar
+                🗑️ Eliminar
               </button>
             </div>
           )}
