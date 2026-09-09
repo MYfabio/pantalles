@@ -25,4 +25,26 @@ Variables: `DATABASE_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `GEMINI_API_KEY`,
 
 ## Desplegament
 
-Pendent. Previst a Railway, automàtic a cada push a `main`.
+A Railway, automàtic a cada push a `main`. El `Dockerfile` aplica
+`prisma migrate deploy` en arrencar el contenidor, així que les migracions no
+s'han de llançar a mà.
+
+Configuració necessària al servei de Railway:
+
+1. **Settings → Networking → Public Networking**, amb el port `3000`. Sense això
+   el servei només és accessible pel domini intern `*.railway.internal`, que no
+   resol des de fora de Railway (`DNS_PROBE_FINISHED_NXDOMAIN` al navegador).
+   - Domini definitiu: **`kiosko.aulaia.cat`**, afegit amb *Custom Domain*.
+     Railway dóna un objectiu `*.up.railway.app` que cal posar com a registre
+     `CNAME` de `kiosko` a la zona DNS d'`aulaia.cat`. El certificat TLS
+     l'emet Railway automàticament un cop el DNS propaga.
+   - *Generate Domain* crea un `*.up.railway.app` provisional, útil per provar
+     abans de tocar el DNS.
+2. **Variables**:
+   - `DATABASE_URL` → referència interna de Postgres (`${{Postgres.DATABASE_URL}}`).
+   - `NEXTAUTH_URL` → `https://kiosko.aulaia.cat`. Ha de coincidir exactament amb
+     el domini pel qual s'hi accedeix; si apunta a `localhost` o al domini
+     provisional, el login entra en bucle de redirecció.
+   - `NEXTAUTH_SECRET`, `GEMINI_API_KEY`, `BLOB_READ_WRITE_TOKEN`.
+3. El primer desplegament crea les taules però **no** l'usuari administrador:
+   cal executar `npm run seed` un cop contra la base de dades de Railway.
