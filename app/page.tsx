@@ -252,7 +252,8 @@ export default function LandingPage() {
       </section>
 
       {/* ---------- Instal·lació ---------- */}
-      <section id="installacio" className="bg-slate-50 px-5 py-16 sm:py-20">
+      {/* scroll-mt keeps the heading clear of the sticky header on the anchor jump */}
+      <section id="installacio" className="scroll-mt-20 bg-slate-50 px-5 py-16 sm:py-20">
         <div className="mx-auto max-w-6xl">
           <h2 className="text-3xl font-bold" style={{ color: NAVY }}>
             Instal·lar Kiosko en un monitor
