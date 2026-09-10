@@ -4,6 +4,19 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 /**
+ * The public origin as the device sees it.
+ *
+ * `req.nextUrl.origin` is the address the server bound to (0.0.0.0:3000 behind
+ * Railway's proxy), which is useless to a TV box, so trust the proxy headers.
+ */
+function publicOrigin(req: NextRequest) {
+  const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
+  if (!host) return req.nextUrl.origin;
+  const proto = req.headers.get("x-forwarded-proto") || "https";
+  return `${proto}://${host}`;
+}
+
+/**
  * What a player device should show, in order.
  *
  * Deliberately public and unauthenticated: the devices are TV boxes with no
@@ -41,7 +54,7 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
     if (items.length === 0 && screen.panelId) {
       items.push({
         label: "Panell",
-        url: new URL(`/panel/${screen.slug}`, req.nextUrl.origin).toString(),
+        url: `${publicOrigin(req)}/panel/${screen.slug}`,
         seconds: 60,
       });
     }
