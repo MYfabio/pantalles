@@ -3,8 +3,8 @@
  * changed without touching the page.
  */
 
-/** Where a school signs up. Point this at the real aulaia.cat form. */
-export const ALTA_FORM_URL = "https://aulaia.cat";
+/** Where a school signs up: the Aulaia contact form. */
+export const ALTA_FORM_URL = "https://www.aulaia.cat/contacte";
 
 /**
  * Direct download for the Android player APK.
