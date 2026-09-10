@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="kiosko_navy">#1a3a5c</color>
+    <color name="kiosko_accent">#a00842</color>
+    <color name="kiosko_pink">#e8467f</color>
+    <color name="kiosko_error">#b3261e</color>
+</resources>

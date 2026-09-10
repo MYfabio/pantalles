@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Kiosko" parent="Theme.Material3.DayNight">
+        <item name="colorPrimary">@color/kiosko_navy</item>
+        <item name="colorSecondary">@color/kiosko_accent</item>
+    </style>
+
+    <!-- No title bar and no status bar: the panel is the content. -->
+    <style name="Theme.Kiosko.Fullscreen" parent="Theme.Kiosko">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:windowFullscreen">true</item>
+    </style>
+</resources>

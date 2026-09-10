@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Kiosko</string>
+
+    <string name="retry">Reintentar</string>
+
+    <string name="settings_title">Configuració</string>
+    <string name="settings_intro">Aquesta pantalla només necessita saber dues coses. La resta (què mostrar, en quin ordre i quant de temps) es gestiona des del navegador.</string>
+    <string name="settings_base_url">Adreça de Kiosko</string>
+    <string name="settings_base_url_hint">https://kiosko.aulaia.cat</string>
+    <string name="settings_slug">Identificador de la pantalla</string>
+    <string name="settings_slug_hint">taller</string>
+    <string name="settings_slug_help">El trobaràs al gestor, a Pantalles → Editar. És l\'última part de l\'adreça de la llista.</string>
+    <string name="settings_kiosk">Mode quiosc</string>
+    <string name="settings_kiosk_help">Fixa l\'aplicació perquè no se\'n pugui sortir. Només té efecte si el dispositiu s\'ha provisionat com a propietari (vegeu el manual).</string>
+    <string name="settings_test">Provar</string>
+    <string name="settings_save">Desar i començar</string>
+    <string name="settings_missing">Cal omplir l\'adreça i l\'identificador.</string>
+    <string name="settings_testing">Consultant el servidor…</string>
+    <string name="settings_test_ok">Correcte: «%1$s», %2$d element(s) a la rotació.</string>
+    <string name="settings_test_failed">No s\'ha pogut connectar: %1$s</string>
+
+    <string name="error_no_playlist">No es pot llegir la llista de continguts.\n\n%1$s\n\nEs reintentarà automàticament.</string>
+    <string name="error_screen_inactive">Aquesta pantalla no té continguts assignats.</string>
+</resources>
