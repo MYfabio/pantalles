@@ -76,10 +76,11 @@ Configuració necessària al servei de Railway:
 1. **Settings → Networking → Public Networking**, amb el port `3000`. Sense això
    el servei només és accessible pel domini intern `*.railway.internal`, que no
    resol des de fora de Railway (`DNS_PROBE_FINISHED_NXDOMAIN` al navegador).
-   - Domini definitiu: **`kiosko.aulaia.cat`**, afegit amb *Custom Domain*.
-     Railway dóna un objectiu `*.up.railway.app` que cal posar com a registre
-     `CNAME` de `kiosko` a la zona DNS d'`aulaia.cat`. El certificat TLS
-     l'emet Railway automàticament un cop el DNS propaga.
+   - Domini: **`kiosko.aulaia.cat`**, afegit amb *Custom Domain*. La zona DNS
+     d'`aulaia.cat` **no és a cdmon** (on només hi ha el domini registrat):
+     està delegada a **Cloudflare**, que és on cal crear els registres. El
+     `CNAME` ha d'anar en mode **DNS only** (núvol gris); amb el proxy activat
+     Railway no pot verificar el domini ni emetre el certificat.
    - *Generate Domain* crea un `*.up.railway.app` provisional, útil per provar
      abans de tocar el DNS.
 2. **Variables**:
