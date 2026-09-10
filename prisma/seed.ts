@@ -46,6 +46,19 @@ async function main() {
     create: {},
   });
 
+  const panel = await prisma.panel.upsert({
+    where: { id: "main" },
+    update: {},
+    create: {
+      id: "main",
+      name: "Panell general",
+      quoteText: "Cada dia és una nova oportunitat per aprendre.",
+    },
+  });
+
+  // Screens with no panel yet start on the general one.
+  await prisma.screen.updateMany({ where: { panelId: null }, data: { panelId: panel.id } });
+
   const panelBlocks = [
     {
       key: "general",
@@ -91,19 +104,11 @@ async function main() {
 
   for (const block of panelBlocks) {
     await prisma.panelBlock.upsert({
-      where: { key: block.key },
+      where: { panelId_key: { panelId: panel.id, key: block.key } },
       update: {},
-      create: block,
+      create: { ...block, panelId: panel.id },
     });
   }
-
-  await prisma.panelSettings.upsert({
-    where: { id: "main" },
-    update: {},
-    create: {
-      quoteText: "Cada dia és una nova oportunitat per aprendre.",
-    },
-  });
 
   const sustainabilityIndicators = [
     { key: "aigua", order: 0, icon: "💧", unitat: "L", valorInicial: 12500, increment: 35, dataInici: "2026-09-01", frequencia: "dia" },

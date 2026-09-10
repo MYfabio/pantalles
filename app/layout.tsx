@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import Providers from "@/components/Providers";
 
 export const metadata: Metadata = {
-  title: "Pantalles - Escola Industrial",
+  title: "Kiosko - Escola Industrial",
+  description: "Gestor de pantalles digitals de l'Escola Industrial",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

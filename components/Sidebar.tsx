@@ -3,10 +3,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
+import { KioskoMark } from "@/components/KioskoLogo";
 
 const links = [
   { href: "/dashboard", label: "Tauler", icon: "📊" },
-  { href: "/dashboard/panel", label: "Panell general", icon: "🗂️" },
+  { href: "/dashboard/panel", label: "Panells", icon: "🗂️" },
   { href: "/dashboard/screens", label: "Pantalles", icon: "🖥️" },
   { href: "/dashboard/users", label: "Usuaris", icon: "👥" },
   { href: "/dashboard/settings", label: "Configuracio", icon: "⚙️" },
@@ -24,10 +25,15 @@ export default function Sidebar() {
       style={{ background: "#1a3a5c", width: collapsed ? 64 : 224 }}
     >
       <div className="p-4 border-b border-white/10 flex items-center justify-between">
-        {!collapsed && (
-          <div>
-            <h1 className="text-lg font-bold">Escola Industrial</h1>
-            <p className="text-xs text-white/60">Gestor de pantalles</p>
+        {collapsed ? (
+          <KioskoMark size={28} accent="#e8467f" />
+        ) : (
+          <div className="flex items-center gap-2">
+            <KioskoMark size={28} accent="#e8467f" />
+            <div>
+              <h1 className="text-lg font-bold leading-tight">Kiosko</h1>
+              <p className="text-xs text-white/60">Escola Industrial</p>
+            </div>
           </div>
         )}
         <button

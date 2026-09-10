@@ -10,19 +10,13 @@ export default async function DashboardPage() {
   const screens = await prisma.screen.findMany();
   const blocks = await prisma.panelBlock.findMany({ orderBy: { order: "asc" } });
   const activeBlocks = blocks.filter((b) => b.enabled).length;
-  const panelSettings = await prisma.panelSettings.upsert({
-    where: { id: "main" },
-    update: {},
-    create: {},
-    include: { screens: true },
-  });
-  const screensWithPanel = panelSettings.screens.length;
+  const screensWithPanel = screens.filter((s) => s.panelId).length;
 
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-lg font-medium text-gray-900">Tauler principal</h1>
-        <Link href="/dashboard/panel" className="px-4 py-2 rounded-lg text-sm text-white font-medium" style={{ background: "#1a3a5c" }}>Panell general</Link>
+        <Link href="/dashboard/panel" className="px-4 py-2 rounded-lg text-sm text-white font-medium" style={{ background: "#1a3a5c" }}>Panells</Link>
       </div>
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-xl border p-4">

@@ -1,6 +1,17 @@
-# Pantalles — Escola Industrial
+# Kiosko — Escola Industrial
 
 App per gestionar contingut a pantalles digitals.
+
+## Panells
+
+Un **panell** és una disposició completa de pantalla: la capçalera i els seus
+blocs. Cada pantalla apunta a un panell, de manera que diverses pantalles poden
+compartir-ne un o cadascuna mostrar-ne un de diferent. Es gestionen a
+`Tauler → Panells`, amb selector, creació (buida o copiant l'actual) i vista
+prèvia a mida real.
+
+Cada bloc admet una **finestra de publicació** (`des de` / `fins a`): fora
+d'aquestes dates desapareix sol de les pantalles, sense haver-hi de tornar.
 
 Context complet per treballar-hi: [`docs/PROMPT-INICIO.md`](docs/PROMPT-INICIO.md).
 

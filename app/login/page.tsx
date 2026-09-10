@@ -2,6 +2,7 @@
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import KioskoLogo from "@/components/KioskoLogo";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -20,9 +21,9 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: "#1a3a5c" }}>
       <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold" style={{ color: "#1a3a5c" }}>Escola Industrial</h1>
-          <p className="text-gray-500 text-sm mt-1">Gestor de pantalles</p>
+        <div className="flex flex-col items-center mb-6" style={{ color: "#1a3a5c" }}>
+          <KioskoLogo size={44} subtitle="Escola Industrial" />
+          <p className="text-gray-500 text-sm mt-3">Gestor de pantalles</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

@@ -20,6 +20,8 @@ import SustainabilityModuleEditor, {
 import PanelDisplay from "@/components/PanelDisplay";
 
 const PREVIEW_SCALE = 400 / 1080;
+const SCREEN_WIDTH = 1080;
+const SCREEN_HEIGHT = 1920;
 
 interface Screen {
   id: string;
@@ -28,7 +30,23 @@ interface Screen {
   location: string | null;
 }
 
+interface Panel {
+  id: string;
+  name: string;
+  logoUrl: string | null;
+  showClock: boolean;
+  showWeather: boolean;
+  showQuote: boolean;
+  quoteText: string | null;
+  showSustainability: boolean;
+  sustainabilityImageUrl: string | null;
+  screenIds: string[];
+}
+
 export default function PanelEditorPage() {
+  const [panels, setPanels] = useState<Panel[]>([]);
+  const [panelId, setPanelId] = useState<string | null>(null);
+  const [name, setName] = useState("");
   const [blocks, setBlocks] = useState<EditableBlock[]>([]);
   const [logoUrl, setLogoUrl] = useState("");
   const [showClock, setShowClock] = useState(true);
@@ -44,45 +62,111 @@ export default function PanelEditorPage() {
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingSustainabilityImage, setUploadingSustainabilityImage] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [blocksRes, settingsRes, screensRes, sustainabilityRes] = await Promise.all([
-        fetch("/api/panel-blocks", { cache: "no-store" }),
-        fetch("/api/settings", { cache: "no-store" }),
-        fetch("/api/screens", { cache: "no-store" }),
-        fetch("/api/sustainability", { cache: "no-store" }),
-      ]);
-      const blocksData = await blocksRes.json();
-      const settingsData = await settingsRes.json();
-      const screensData = await screensRes.json();
-      const sustainabilityData = await sustainabilityRes.json();
-      // TEMP DEBUG LOGGING - remove once the save-persistence issue is confirmed fixed.
-      console.log("[PANELL DEBUG] GET /api/panel-blocks response on load:", blocksData);
-      setBlocks(blocksData);
-      setLogoUrl(settingsData.panel?.logoUrl || "");
-      setShowClock(settingsData.panel?.showClock ?? true);
-      setShowWeather(settingsData.panel?.showWeather ?? true);
-      setShowQuote(settingsData.panel?.showQuote ?? false);
-      setQuoteText(settingsData.panel?.quoteText || "");
-      setShowSustainability(settingsData.panel?.showSustainability ?? true);
-      setSustainabilityImageUrl(settingsData.panel?.sustainabilityImageUrl || "");
-      setSustainabilityIndicators(sustainabilityData);
-      setScreens(screensData);
-      setScreenIds(settingsData.panel?.screenIds || []);
-    } catch (error) {
-      alert("Error carregant el panell");
-    } finally {
-      setLoading(false);
-    }
+  const applyPanel = useCallback((panel: Panel) => {
+    setPanelId(panel.id);
+    setName(panel.name);
+    setLogoUrl(panel.logoUrl || "");
+    setShowClock(panel.showClock);
+    setShowWeather(panel.showWeather);
+    setShowQuote(panel.showQuote);
+    setQuoteText(panel.quoteText || "");
+    setShowSustainability(panel.showSustainability);
+    setSustainabilityImageUrl(panel.sustainabilityImageUrl || "");
+    setScreenIds(panel.screenIds || []);
   }, []);
+
+  const loadBlocks = useCallback(async (id: string) => {
+    const res = await fetch(`/api/panel-blocks?panelId=${id}`, { cache: "no-store" });
+    setBlocks(await res.json());
+  }, []);
+
+  const loadData = useCallback(
+    async (preferredPanelId?: string) => {
+      setLoading(true);
+      try {
+        const [panelsRes, screensRes, sustainabilityRes] = await Promise.all([
+          fetch("/api/panels", { cache: "no-store" }),
+          fetch("/api/screens", { cache: "no-store" }),
+          fetch("/api/sustainability", { cache: "no-store" }),
+        ]);
+        const panelsData: Panel[] = await panelsRes.json();
+        setPanels(panelsData);
+        setScreens(await screensRes.json());
+        setSustainabilityIndicators(await sustainabilityRes.json());
+
+        const chosen =
+          panelsData.find((p) => p.id === preferredPanelId) ||
+          panelsData.find((p) => p.id === panelId) ||
+          panelsData[0];
+        if (chosen) {
+          applyPanel(chosen);
+          await loadBlocks(chosen.id);
+        }
+      } catch (error) {
+        alert("Error carregant el panell");
+      } finally {
+        setLoading(false);
+      }
+    },
+    // panelId is read as a fallback only; re-creating this on every switch would
+    // reload the whole page for nothing.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [applyPanel, loadBlocks]
+  );
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const switchPanel = async (id: string) => {
+    const panel = panels.find((p) => p.id === id);
+    if (!panel) return;
+    setLoading(true);
+    try {
+      applyPanel(panel);
+      await loadBlocks(id);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreatePanel = async () => {
+    const newName = prompt("Nom del nou panell (per exemple: Panell Taller)");
+    if (!newName?.trim()) return;
+    const copy = confirm(
+      "Vols copiar el contingut del panell actual?\n\nAcceptar: copia blocs i capçalera.\nCancel·lar: crea el panell buit."
+    );
+    try {
+      const res = await fetch("/api/panels", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newName.trim(), copyFromId: copy ? panelId : null }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Error creant el panell");
+      await loadData(data.id);
+    } catch (error: any) {
+      alert(error?.message || "Error creant el panell");
+    }
+  };
+
+  const handleDeletePanel = async () => {
+    if (!panelId) return;
+    if (!confirm(`Segur que vols esborrar el panell "${name}"? No es pot desfer.`)) return;
+    try {
+      const res = await fetch(`/api/panels/${panelId}`, { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Error esborrant el panell");
+      setPanelId(null);
+      await loadData();
+    } catch (error: any) {
+      alert(error?.message || "Error esborrant el panell");
+    }
+  };
 
   const updateBlock = (id: string, patch: Partial<EditableBlock>) => {
     setBlocks((prev) => prev.map((b) => (b.id === id ? { ...b, ...patch } : b)));
@@ -163,42 +247,32 @@ export default function PanelEditorPage() {
   };
 
   const handleSave = async () => {
+    if (!panelId) return;
     setSaving(true);
     try {
-      // TEMP DEBUG LOGGING - remove once the save-persistence issue is confirmed fixed.
-      console.log("[PANELL DEBUG] blocks state at click time:", JSON.parse(JSON.stringify(blocks)));
-
       await Promise.all(
-        blocks.map((b) => {
-          const payload = {
-            enabled: b.enabled,
-            title: b.title,
-            text: b.text,
-            date: b.date,
-            typeText: b.typeText,
-            imageUrl: b.imageUrl,
-          };
-          console.log(`[PANELL DEBUG] PATCH /api/panel-blocks/${b.id} (${b.key}) payload:`, payload);
-          return fetch(`/api/panel-blocks/${b.id}`, {
+        blocks.map((b) =>
+          fetch(`/api/panel-blocks/${b.id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          })
-            .then((res) => checkResponse(res, `Bloc "${b.key}"`))
-            .then(async (res) => {
-              const data = await res.clone().json();
-              console.log(`[PANELL DEBUG] response for ${b.key}:`, data);
-              return res;
-            });
-        })
+            body: JSON.stringify({
+              enabled: b.enabled,
+              title: b.title,
+              text: b.text,
+              date: b.date,
+              typeText: b.typeText,
+              imageUrl: b.imageUrl,
+              startsAt: b.startsAt,
+              endsAt: b.endsAt,
+            }),
+          }).then((res) => checkResponse(res, `Bloc "${b.key}"`))
+        )
       );
 
-      const orderPayload = { blocks: blocks.map((b) => ({ id: b.id, order: b.order })) };
-      console.log("[PANELL DEBUG] PATCH /api/panel-blocks (order) payload:", orderPayload);
       const orderRes = await fetch("/api/panel-blocks", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderPayload),
+        body: JSON.stringify({ blocks: blocks.map((b) => ({ id: b.id, order: b.order })) }),
       });
       await checkResponse(orderRes, "Ordre dels blocs");
 
@@ -220,8 +294,11 @@ export default function PanelEditorPage() {
         )
       );
 
-      const settingsPayload = {
-        panel: {
+      const panelRes = await fetch(`/api/panels/${panelId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
           logoUrl,
           showClock,
           showWeather,
@@ -230,15 +307,13 @@ export default function PanelEditorPage() {
           showSustainability,
           sustainabilityImageUrl,
           screenIds,
-        },
-      };
-      console.log("[PANELL DEBUG] PATCH /api/settings payload:", settingsPayload);
-      const settingsRes = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settingsPayload),
+        }),
       });
-      await checkResponse(settingsRes, "Configuracio del panell");
+      await checkResponse(panelRes, "Configuracio del panell");
+
+      // Screen assignments are exclusive, so other panels may have changed too.
+      const panelsRes = await fetch("/api/panels", { cache: "no-store" });
+      setPanels(await panelsRes.json());
 
       alert("Panell guardat");
     } catch (error: any) {
@@ -249,7 +324,7 @@ export default function PanelEditorPage() {
     }
   };
 
-  if (loading) return <div className="p-6">Cargando...</div>;
+  if (loading) return <div className="p-6">Carregant...</div>;
 
   const previewBlocks = [...blocks]
     .sort((a, b) => a.order - b.order)
@@ -263,13 +338,73 @@ export default function PanelEditorPage() {
       imageUrl: b.imageUrl,
     }));
 
+  const previewSettings = {
+    logoUrl,
+    showClock,
+    showWeather,
+    showQuote,
+    quoteText,
+    showSustainability,
+    sustainabilityImageUrl,
+  };
+
+  // Editing at 400px wide says nothing about whether a text reads from the
+  // corridor, so the preview can take over the whole viewport.
+  if (fullscreen) {
+    return (
+      <FullscreenPreview onClose={() => setFullscreen(false)}>
+        <PanelDisplay
+          blocks={previewBlocks}
+          sustainabilityIndicators={sustainabilityIndicators}
+          settings={previewSettings}
+        />
+      </FullscreenPreview>
+    );
+  }
+
+  const assignedScreens = screens.filter((s) => screenIds.includes(s.id));
+
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-lg font-medium">Panell general</h1>
+      <div className="flex items-center justify-between mb-4 gap-4 flex-wrap">
+        <div className="flex items-center gap-2">
+          <select
+            value={panelId || ""}
+            onChange={(e) => switchPanel(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white font-medium"
+          >
+            {panels.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={handleCreatePanel}
+            className="px-3 py-2 rounded-lg border border-gray-300 text-gray-600 text-sm"
+            title="Crear un panell nou"
+          >
+            + Nou
+          </button>
+          {panels.length > 1 && (
+            <button
+              onClick={handleDeletePanel}
+              className="px-3 py-2 rounded-lg border border-red-200 text-red-600 text-sm"
+              title="Esborrar aquest panell"
+            >
+              Esborrar
+            </button>
+          )}
+        </div>
         <div className="flex gap-2">
           <button
-            onClick={loadData}
+            onClick={() => setFullscreen(true)}
+            className="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 text-sm font-medium"
+          >
+            ⛶ Vista real
+          </button>
+          <button
+            onClick={() => loadData(panelId || undefined)}
             className="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 text-sm font-medium"
           >
             Restablir
@@ -291,6 +426,14 @@ export default function PanelEditorPage() {
             <h2 className="text-base font-medium mb-3" style={{ color: "#a00842" }}>
               Capçalera
             </h2>
+
+            <label className="block text-xs font-bold mb-1">Nom del panell</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-3"
+            />
 
             <label className="block text-xs font-bold mb-1">Logotip de la capçalera</label>
             {logoUrl && (
@@ -381,9 +524,12 @@ export default function PanelEditorPage() {
           />
 
           <div className="bg-white rounded-xl border p-4 mt-4">
-            <h2 className="text-base font-medium mb-3" style={{ color: "#a00842" }}>
+            <h2 className="text-base font-medium mb-1" style={{ color: "#a00842" }}>
               Pantalles on es mostra
             </h2>
+            <p className="text-xs text-gray-400 mb-3">
+              Cada pantalla mostra un sol panell: si la marques aquí, deixa de mostrar el que tenia.
+            </p>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {screens.map((screen) => (
                 <label key={screen.id} className="flex items-center gap-2 text-sm">
@@ -403,11 +549,11 @@ export default function PanelEditorPage() {
           </div>
         </div>
 
-        <div className="flex justify-center items-start">
+        <div className="flex flex-col items-center">
           <div
             style={{
-              width: 1080 * PREVIEW_SCALE,
-              height: 1920 * PREVIEW_SCALE,
+              width: SCREEN_WIDTH * PREVIEW_SCALE,
+              height: SCREEN_HEIGHT * PREVIEW_SCALE,
               overflow: "hidden",
               boxShadow: "0 18px 50px rgba(0,0,0,.25)",
             }}
@@ -416,20 +562,66 @@ export default function PanelEditorPage() {
               <PanelDisplay
                 blocks={previewBlocks}
                 sustainabilityIndicators={sustainabilityIndicators}
-                settings={{
-                  logoUrl,
-                  showClock,
-                  showWeather,
-                  showQuote,
-                  quoteText,
-                  showSustainability,
-                  sustainabilityImageUrl,
-                }}
+                settings={previewSettings}
               />
             </div>
           </div>
+          {assignedScreens.length > 0 && (
+            <div className="mt-3 text-xs text-gray-500 text-center">
+              Es veu a:{" "}
+              {assignedScreens.map((s, i) => (
+                <span key={s.id}>
+                  {i > 0 && ", "}
+                  <a
+                    href={`/panel/${s.slug}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ color: "#4a8abf" }}
+                  >
+                    {s.name}
+                  </a>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Scales the 1080x1920 panel to fill the browser window, like the real screen. */
+function FullscreenPreview({
+  children,
+  onClose,
+}: {
+  children: React.ReactNode;
+  onClose: () => void;
+}) {
+  const [scale, setScale] = useState(0.3);
+
+  useEffect(() => {
+    const update = () =>
+      setScale(Math.min(window.innerWidth / SCREEN_WIDTH, window.innerHeight / SCREEN_HEIGHT));
+    update();
+    window.addEventListener("resize", update);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black flex items-center justify-center overflow-hidden">
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 z-10 px-4 py-2 rounded-lg bg-white/90 text-sm font-medium"
+      >
+        ✕ Tancar (Esc)
+      </button>
+      <div style={{ transform: `scale(${scale})` }}>{children}</div>
     </div>
   );
 }

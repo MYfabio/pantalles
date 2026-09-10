@@ -5,14 +5,17 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: "No autoritzat" }, { status: 401 });
   }
 
+  const panelId = req.nextUrl.searchParams.get("panelId");
+
   try {
     const blocks = await prisma.panelBlock.findMany({
+      where: panelId ? { panelId } : undefined,
       orderBy: { order: "asc" },
     });
     return NextResponse.json(blocks, { headers: { "Cache-Control": "no-store, must-revalidate" } });
@@ -51,7 +54,6 @@ export async function PATCH(req: NextRequest) {
       message: error?.message,
       code: error?.code,
       meta: error?.meta,
-      stack: error?.stack,
     });
     return NextResponse.json({ error: "Error reordenant els blocs" }, { status: 500 });
   }

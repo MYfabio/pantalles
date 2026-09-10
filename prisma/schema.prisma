@@ -28,7 +28,9 @@ model Screen {
   createdAt  DateTime        @default(now())
   updatedAt  DateTime        @updatedAt
   contents   ContentScreen[]
-  panelScreens PanelScreen[]
+  // Which panel this screen displays. Null means the screen shows no panel.
+  panelId    String?
+  panel      Panel?          @relation(fields: [panelId], references: [id], onDelete: SetNull)
 }
 
 model Content {
@@ -55,17 +57,44 @@ model ContentScreen {
   @@id([contentId, screenId])
 }
 
+// A panel is one full-screen layout: its header settings plus its own blocks.
+// Screens point at a panel, so several screens can share one panel or each
+// show a different one.
+model Panel {
+  id                     String       @id @default(cuid())
+  name                   String
+  logoUrl                String?
+  showClock              Boolean      @default(true)
+  showWeather            Boolean      @default(true)
+  showQuote              Boolean      @default(false)
+  quoteText              String?
+  showSustainability     Boolean      @default(true)
+  sustainabilityImageUrl String?
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+  blocks                 PanelBlock[]
+  screens                Screen[]
+}
+
 model PanelBlock {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  enabled   Boolean  @default(true)
+  id        String    @id @default(cuid())
+  panelId   String
+  panel     Panel     @relation(fields: [panelId], references: [id], onDelete: Cascade)
+  key       String
+  enabled   Boolean   @default(true)
   title     String
   text      String
   date      String
   typeText  String
   imageUrl  String?
+  // Optional publication window. Outside it the block is hidden on the public
+  // panel, but stays visible in the editor so it can be prepared in advance.
+  startsAt  DateTime?
+  endsAt    DateTime?
   order     Int
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime  @updatedAt
+
+  @@unique([panelId, key])
 }
 
 model Settings {
@@ -77,18 +106,6 @@ model Settings {
   fontTitle      String  @default("Inter")
   fontBody       String  @default("Inter")
   logoUrl        String?
-}
-
-model PanelSettings {
-  id                     String        @id @default("main")
-  logoUrl                String?
-  showClock              Boolean       @default(true)
-  showWeather            Boolean       @default(true)
-  showQuote              Boolean       @default(false)
-  quoteText              String?
-  showSustainability     Boolean       @default(true)
-  sustainabilityImageUrl String?
-  screens                PanelScreen[]
 }
 
 model SustainabilityIndicator {
@@ -103,13 +120,4 @@ model SustainabilityIndicator {
   enabled      Boolean  @default(true)
   order        Int
   updatedAt    DateTime @updatedAt
-}
-
-model PanelScreen {
-  panelSettingsId String
-  screenId        String
-  panelSettings   PanelSettings @relation(fields: [panelSettingsId], references: [id], onDelete: Cascade)
-  screen          Screen        @relation(fields: [screenId], references: [id], onDelete: Cascade)
-
-  @@id([panelSettingsId, screenId])
 }

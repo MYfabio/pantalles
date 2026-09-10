@@ -3,48 +3,49 @@ import PanelFullscreenFrame from "@/components/PanelFullscreenFrame";
 
 export const dynamic = "force-dynamic";
 
+function Notice({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="w-full h-screen flex items-center justify-center text-white"
+      style={{ background: "#1a3a5c" }}
+    >
+      {children}
+    </div>
+  );
+}
+
 export default async function PanelPage({ params }: { params: { slug: string } }) {
-  const screen = await prisma.screen.findUnique({ where: { slug: params.slug } });
-
-  if (!screen) {
-    return (
-      <div className="w-full h-screen flex items-center justify-center text-white" style={{ background: "#1a3a5c" }}>
-        Pantalla no trobada
-      </div>
-    );
-  }
-
-  const panelSettings = await prisma.panelSettings.upsert({
-    where: { id: "main" },
-    update: {},
-    create: {},
-    include: { screens: true },
+  const screen = await prisma.screen.findUnique({
+    where: { slug: params.slug },
+    include: { panel: { include: { blocks: { orderBy: { order: "asc" } } } } },
   });
 
-  const enabledForScreen = panelSettings.screens.some((s) => s.screenId === screen.id);
-
-  if (!enabledForScreen) {
-    return (
-      <div className="w-full h-screen flex items-center justify-center text-white" style={{ background: "#1a3a5c" }}>
-        El panell general no esta activat per a aquesta pantalla
-      </div>
-    );
+  if (!screen) {
+    return <Notice>Pantalla no trobada</Notice>;
   }
 
-  const [blocks, sustainabilityIndicators] = await Promise.all([
-    prisma.panelBlock.findMany({ orderBy: { order: "asc" } }),
-    prisma.sustainabilityIndicator.findMany({ orderBy: { order: "asc" } }),
-  ]);
+  if (!screen.panel) {
+    return <Notice>Aquesta pantalla no te cap panell assignat</Notice>;
+  }
 
-  const blockData = blocks.map((b) => ({
-    key: b.key,
-    enabled: b.enabled,
-    title: b.title,
-    text: b.text,
-    date: b.date,
-    typeText: b.typeText,
-    imageUrl: b.imageUrl,
-  }));
+  const panel = screen.panel;
+  const sustainabilityIndicators = await prisma.sustainabilityIndicator.findMany({
+    orderBy: { order: "asc" },
+  });
+
+  // Blocks outside their publication window simply do not reach the screen.
+  const now = new Date();
+  const blockData = panel.blocks
+    .filter((b) => (!b.startsAt || b.startsAt <= now) && (!b.endsAt || b.endsAt >= now))
+    .map((b) => ({
+      key: b.key,
+      enabled: b.enabled,
+      title: b.title,
+      text: b.text,
+      date: b.date,
+      typeText: b.typeText,
+      imageUrl: b.imageUrl,
+    }));
 
   const indicatorData = sustainabilityIndicators.map((i) => ({
     key: i.key,
@@ -62,13 +63,13 @@ export default async function PanelPage({ params }: { params: { slug: string } }
       blocks={blockData}
       sustainabilityIndicators={indicatorData}
       settings={{
-        logoUrl: panelSettings.logoUrl,
-        showClock: panelSettings.showClock,
-        showWeather: panelSettings.showWeather,
-        showQuote: panelSettings.showQuote,
-        quoteText: panelSettings.quoteText,
-        showSustainability: panelSettings.showSustainability,
-        sustainabilityImageUrl: panelSettings.sustainabilityImageUrl,
+        logoUrl: panel.logoUrl,
+        showClock: panel.showClock,
+        showWeather: panel.showWeather,
+        showQuote: panel.showQuote,
+        quoteText: panel.quoteText,
+        showSustainability: panel.showSustainability,
+        sustainabilityImageUrl: panel.sustainabilityImageUrl,
       }}
     />
   );
