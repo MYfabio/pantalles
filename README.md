@@ -13,6 +13,37 @@ prèvia a mida real.
 Cada bloc admet una **finestra de publicació** (`des de` / `fins a`): fora
 d'aquestes dates desapareix sol de les pantalles, sense haver-hi de tornar.
 
+## Rotació de continguts a les pantalles
+
+Cada pantalla té una llista ordenada d'URLs amb els seus segons, editable a
+`Tauler → Pantalles → Editar`. Pot barrejar el panell de Kiosko amb qualsevol
+altra web del centre.
+
+El dispositiu reproductor no guarda cap llista: només sap el seu slug i
+consulta aquest endpoint públic, que rellegeix periòdicament.
+
+```
+GET /api/playlist/<slug>
+```
+
+```json
+{
+  "screen": "taller",
+  "name": "Pantalla Taller",
+  "active": true,
+  "reloadSeconds": 300,
+  "items": [
+    { "label": "Panell", "url": "https://kiosko.aulaia.cat/panel/taller", "seconds": 60 },
+    { "label": "Aula Sostenible", "url": "https://…", "seconds": 20 }
+  ]
+}
+```
+
+És públic a propòsit: els reproductors són dispositius sense ningú que hi
+iniciï sessió, i només exposa adreces que ja són públiques. Si la pantalla està
+desactivada retorna `active: false` i cap element; si no té llista configurada,
+retorna el seu propi panell.
+
 Context complet per treballar-hi: [`docs/PROMPT-INICIO.md`](docs/PROMPT-INICIO.md).
 
 ## Accés

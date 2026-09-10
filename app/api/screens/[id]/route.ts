@@ -10,7 +10,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 
   try {
-    const screen = await prisma.screen.findUnique({ where: { id: params.id } });
+    const screen = await prisma.screen.findUnique({
+      where: { id: params.id },
+      include: { urls: { orderBy: { order: "asc" } } },
+    });
     if (!screen) {
       return NextResponse.json({ error: "No trobada" }, { status: 404 });
     }
@@ -26,15 +29,41 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: "No autoritzat" }, { status: 401 });
   }
 
-  const { name, slug, location, active } = await req.json();
+  const { name, slug, location, active, urls } = await req.json();
 
   try {
     const screen = await prisma.screen.update({
       where: { id: params.id },
       data: { name, slug, location, active, updatedAt: new Date() },
     });
-    return NextResponse.json(screen);
+
+    // The rotation list is short and edited as a whole, so it is simpler to
+    // replace it than to diff each row.
+    if (Array.isArray(urls)) {
+      const rows = (urls as any[])
+        .filter((u) => u?.url?.trim())
+        .map((u, order) => ({
+          screenId: params.id,
+          label: (u.label || "").trim() || "Sense nom",
+          url: u.url.trim(),
+          seconds: Math.max(5, Number(u.seconds) || 30),
+          enabled: u.enabled !== false,
+          order,
+        }));
+
+      await prisma.$transaction([
+        prisma.screenUrl.deleteMany({ where: { screenId: params.id } }),
+        ...(rows.length ? [prisma.screenUrl.createMany({ data: rows })] : []),
+      ]);
+    }
+
+    const updated = await prisma.screen.findUnique({
+      where: { id: params.id },
+      include: { urls: { orderBy: { order: "asc" } } },
+    });
+    return NextResponse.json(updated);
   } catch (error) {
+    console.error("ERROR UPDATING SCREEN:", error);
     return NextResponse.json({ error: "Error actualitzant pantalla" }, { status: 500 });
   }
 }

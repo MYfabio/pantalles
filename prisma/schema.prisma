@@ -31,6 +31,25 @@ model Screen {
   // Which panel this screen displays. Null means the screen shows no panel.
   panelId    String?
   panel      Panel?          @relation(fields: [panelId], references: [id], onDelete: SetNull)
+  urls       ScreenUrl[]
+}
+
+// One entry in a screen's rotation. The player device asks Kiosko what to show
+// instead of holding its own list, so the rotation is managed from the web and
+// nobody has to walk up to a screen to change it.
+model ScreenUrl {
+  id        String   @id @default(cuid())
+  screenId  String
+  screen    Screen   @relation(fields: [screenId], references: [id], onDelete: Cascade)
+  label     String
+  url       String
+  seconds   Int      @default(30)
+  enabled   Boolean  @default(true)
+  order     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([screenId, order])
 }
 
 model Content {
