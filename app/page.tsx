@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import KioskoLogo, { KioskoMark } from "@/components/KioskoLogo";
 import {
   MonitorIllustration,
@@ -160,8 +161,15 @@ export default function LandingPage() {
               </a>
             </div>
           </div>
-          <div className="flex justify-center">
-            <MonitorIllustration className="h-80 w-auto drop-shadow-2xl sm:h-96" />
+          <div className="relative overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/15">
+            <Image
+              src="/kiosko-pati.jpg"
+              alt="Alumnat consultant un panell Kiosko al pati del centre"
+              width={1376}
+              height={768}
+              priority
+              className="h-full w-full object-cover"
+            />
           </div>
         </div>
       </section>
