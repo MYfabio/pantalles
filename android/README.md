@@ -52,24 +52,27 @@ desactivada al gestor, es mostra en negre: millor això que contingut caducat.
 
 ## Compilar
 
-Cal l'Android Studio (Ladybug o superior) o el JDK 17 amb el SDK d'Android.
+**No cal compilar-lo a mà.** Cada canvi a `android/` el compila GitHub
+Actions (`.github/workflows/android.yml`) i deixa l'APK, ja signat, a una
+adreça fixa:
+
+```
+https://github.com/MYfabio/pantalles/releases/download/kiosko-android/kiosko.apk
+```
+
+Per compilar-lo localment cal l'Android Studio (Ladybug o superior) o el JDK
+17 amb el SDK d'Android:
 
 ```bash
 cd android
-./gradlew assembleRelease
+gradle assembleRelease      # o ./gradlew si has generat el wrapper
 ```
 
-L'APK surt a `app/build/outputs/apk/release/app-release-unsigned.apk`.
-
-Per a un APK signat, que és el que cal per instal·lar-lo còmodament:
-
-```bash
-keytool -genkey -v -keystore kiosko.keystore -alias kiosko \
-        -keyalg RSA -keysize 2048 -validity 10000
-
-# afegeix signingConfigs a app/build.gradle.kts, o signa a mà:
-apksigner sign --ks kiosko.keystore --out kiosko.apk app-release-unsigned.apk
-```
+L'APK surt a `app/build/outputs/apk/release/app-release.apk`, signat amb
+`app/debug.keystore`. Aquesta clau porta les credencials de depuració estàndard
+d'Android: no és cap secret, però és *estable*, que és el que fa que una versió
+nova s'instal·li sobre l'anterior. El dia que l'app surti dels dispositius del
+centre, cal substituir-la per una clau de publicació pròpia.
 
 > El `gradle-wrapper.jar` no és al repositori. L'Android Studio el genera en
 > obrir el projecte; des de la terminal, `gradle wrapper` un sol cop.
