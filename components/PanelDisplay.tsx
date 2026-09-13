@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { imageSlotFor } from "@/lib/panel-layout";
 
 export const COLORS: Record<string, string> = {
   general: "#a00842",
@@ -163,8 +164,8 @@ export default function PanelDisplay({
   const count = active.length || 1;
   const columns = count === 1 ? 1 : 2;
   let rows = "1fr";
-  if (count === 3) rows = "1fr 1fr";
-  else if (count >= 4) rows = "repeat(3,1fr)";
+  if (count === 3 || count === 4) rows = "1fr 1fr";
+  else if (count >= 5) rows = "repeat(3,1fr)";
 
   return (
     <div className="panel-screen">
@@ -226,7 +227,12 @@ export default function PanelDisplay({
               <article className="panel-card panel-card-fullscreen" style={cardStyle}>
                 {item.imageUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={item.imageUrl} alt="" className="panel-card-fullscreen-image" />
+                  <img
+                    src={item.imageUrl}
+                    alt=""
+                    className="panel-card-fullscreen-image"
+                    style={{ aspectRatio: "1016 / 762" }}
+                  />
                 )}
                 <div className="panel-card-fullscreen-body">
                   <div className="panel-card-head">
@@ -246,23 +252,29 @@ export default function PanelDisplay({
         ) : (
           active.map((item, index) => {
             const spanFull = (count === 3 && index === 0) || (count === 5 && item.key === "general");
+            const slot = imageSlotFor(count, index, item.key);
             const cardStyle = {
               ["--accent" as string]: COLORS[item.key],
               ...(spanFull ? { gridColumn: "1 / -1" } : {}),
             } as React.CSSProperties;
             return (
               <article key={item.key} className="panel-card" style={cardStyle}>
-                <div>
+                {item.imageUrl && slot && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={item.imageUrl}
+                    alt=""
+                    className="panel-card-image"
+                    style={{ aspectRatio: `${slot.width} / ${slot.height}` }}
+                  />
+                )}
+                <div className="panel-card-body">
                   <div className="panel-card-head">
                     <span className="panel-badge">{LABELS[item.key]}</span>
                     <span className="panel-icon">{ICONS[item.key]}</span>
                   </div>
                   {item.title && <h3>{item.title}</h3>}
                   {item.text && <p>{item.text}</p>}
-                  {item.imageUrl && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={item.imageUrl} alt="" className="panel-card-image" />
-                  )}
                 </div>
                 <div className="panel-meta">
                   {item.date ? <span className="panel-date-pill">{item.date}</span> : <span />}
@@ -448,10 +460,15 @@ export default function PanelDisplay({
         }
         .panel-card-image {
           width: 100%;
-          max-height: 220px;
           object-fit: cover;
           border-radius: 16px;
-          margin-top: 14px;
+          margin-bottom: 16px;
+          flex: 0 0 auto;
+        }
+        .panel-card-body {
+          flex: 1;
+          min-height: 0;
+          overflow: hidden;
         }
         .panel-card-fullscreen {
           padding: 0;
@@ -460,8 +477,8 @@ export default function PanelDisplay({
         }
         .panel-card-fullscreen-image {
           width: 100%;
-          height: 55%;
           object-fit: cover;
+          flex: 0 0 auto;
         }
         .panel-card-fullscreen-body {
           flex: 1;

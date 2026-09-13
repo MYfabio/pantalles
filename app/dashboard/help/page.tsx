@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { IMAGE_SLOTS } from "@/lib/panel-layout";
 
 interface Screen {
   id: string;
@@ -188,6 +189,66 @@ export default function HelpPage() {
       <div className="rounded-xl border p-4 text-sm bg-gray-50">
         <strong>Per sortir del mode kiosk (manteniment):</strong> prem{" "}
         <span className="font-mono font-medium">Alt + F4</span>.
+      </div>
+
+      <h2 className="text-base font-medium mt-8 mb-1" style={{ color: "#a00842" }}>
+        Imatges: mides ideals
+      </h2>
+      <p className="text-sm text-gray-500 mb-3">
+        El panell reparteix l&apos;espai segons quants blocs hi ha actius, i cada forma de
+        tarjeta té un forat d&apos;imatge diferent. Si la imatge té exactament aquestes mides es
+        veu sencera; si té una altra forma, es retalla pel centre. L&apos;editor ho indica bloc a
+        bloc, però aquí tens la taula completa per preparar-les amb antelació. Cada plantilla de
+        Canva ja té el llenç d&apos;aquesta mida: només cal posar-hi la foto i descarregar.
+      </p>
+      <div className="overflow-x-auto rounded-xl border mb-3">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-left text-xs text-gray-500">
+            <tr>
+              <th className="px-3 py-2">Blocs actius</th>
+              <th className="px-3 py-2">Tarjeta</th>
+              <th className="px-3 py-2">Mida</th>
+              <th className="px-3 py-2">Plantilla</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            {[
+              { blocs: "1", card: "Pantalla completa", slot: IMAGE_SLOTS.FULL },
+              { blocs: "2", card: "Dues columnes altes", slot: IMAGE_SLOTS.TALL },
+              { blocs: "3", card: "El primer, ample a dalt", slot: IMAGE_SLOTS.WIDE },
+              { blocs: "3", card: "Els dos de sota", slot: IMAGE_SLOTS.SMALL },
+              { blocs: "4", card: "Quadrícula 2×2", slot: IMAGE_SLOTS.SMALL },
+              { blocs: "5", card: "General, ample a dalt", slot: IMAGE_SLOTS.WIDE },
+            ].map((row, i) => (
+              <tr key={i}>
+                <td className="px-3 py-2 font-medium">{row.blocs}</td>
+                <td className="px-3 py-2">{row.card}</td>
+                <td className="px-3 py-2 font-mono text-xs">
+                  {row.slot.width} × {row.slot.height} px{" "}
+                  <span className="text-gray-400">({row.slot.ratio})</span>
+                </td>
+                <td className="px-3 py-2">
+                  <a
+                    href={row.slot.canvaUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-medium"
+                    style={{ color: "#4a8abf" }}
+                  >
+                    {row.slot.canvaTitle} ↗
+                  </a>
+                </td>
+              </tr>
+            ))}
+            <tr>
+              <td className="px-3 py-2 font-medium">5</td>
+              <td className="px-3 py-2">Els quatre petits</td>
+              <td className="px-3 py-2 text-xs text-gray-400" colSpan={2}>
+                Sense imatge: la tarjeta és massa baixa perquè es vegi des del passadís.
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   );

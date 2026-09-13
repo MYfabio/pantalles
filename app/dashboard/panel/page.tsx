@@ -18,6 +18,7 @@ import SustainabilityModuleEditor, {
   EditableIndicator,
 } from "@/components/panel/SustainabilityModuleEditor";
 import PanelDisplay from "@/components/PanelDisplay";
+import { imageSlotFor, layoutLabel } from "@/lib/panel-layout";
 
 const PREVIEW_SCALE = 400 / 1080;
 const SCREEN_WIDTH = 1080;
@@ -338,6 +339,19 @@ export default function PanelEditorPage() {
       imageUrl: b.imageUrl,
     }));
 
+  // Which blocks the panel will actually draw, in the same terms PanelDisplay
+  // uses, so the editor's size advice matches what appears on screen.
+  const isShown = (b: EditableBlock) => b.enabled && !!(b.title || b.text || b.date || b.typeText);
+  const byOrder = (a: EditableBlock, b: EditableBlock) => a.order - b.order;
+  const shownBlocks = blocks.filter(isShown).sort(byOrder);
+  // For a block that is not shown yet, advise as if it were switched on.
+  const slotFor = (block: EditableBlock) => {
+    const list = shownBlocks.includes(block)
+      ? shownBlocks
+      : [...shownBlocks, block].sort(byOrder);
+    return imageSlotFor(list.length, list.indexOf(block), block.key);
+  };
+
   const previewSettings = {
     logoUrl,
     showClock,
@@ -496,9 +510,12 @@ export default function PanelEditorPage() {
             />
           </div>
 
-          <h2 className="text-base font-medium mb-3" style={{ color: "#a00842" }}>
-            Blocs informatius
-          </h2>
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="text-base font-medium" style={{ color: "#a00842" }}>
+              Blocs informatius
+            </h2>
+            <span className="text-[11px] text-gray-400">{layoutLabel(shownBlocks.length)}</span>
+          </div>
 
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext
@@ -509,7 +526,12 @@ export default function PanelEditorPage() {
                 .slice()
                 .sort((a, b) => a.order - b.order)
                 .map((block) => (
-                  <SortableBlockEditor key={block.id} block={block} onChange={updateBlock} />
+                  <SortableBlockEditor
+                    key={block.id}
+                    block={block}
+                    onChange={updateBlock}
+                    imageSlot={slotFor(block)}
+                  />
                 ))}
             </SortableContext>
           </DndContext>

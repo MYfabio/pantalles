@@ -1,8 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { COLORS, LABELS } from "@/components/PanelDisplay";
+import type { ImageSlot } from "@/lib/panel-layout";
 
 const TYPE_OPTIONS = ["Activitat", "Sortida", "Orientació", "Avís", "Centre", "Empresa"];
 
@@ -75,9 +76,12 @@ function windowStatus(block: EditableBlock): string | null {
 export default function SortableBlockEditor({
   block,
   onChange,
+  imageSlot,
 }: {
   block: EditableBlock;
   onChange: (id: string, patch: Partial<EditableBlock>) => void;
+  /** Shape of this block's image in the current layout; null = no image shown. */
+  imageSlot: ImageSlot | null;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: block.id,
@@ -93,6 +97,28 @@ export default function SortableBlockEditor({
   };
 
   const status = windowStatus(block);
+
+  // The natural size of the uploaded image, to warn when its shape is far from
+  // the slot's: the panel crops to the centre, so a portrait photo in a wide
+  // slot loses its top and bottom.
+  const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null);
+  useEffect(() => {
+    if (!block.imageUrl) {
+      setNaturalSize(null);
+      return;
+    }
+    const img = new window.Image();
+    img.onload = () => setNaturalSize({ w: img.naturalWidth, h: img.naturalHeight });
+    img.onerror = () => setNaturalSize(null);
+    img.src = block.imageUrl;
+  }, [block.imageUrl]);
+
+  const ratioMismatch =
+    imageSlot && naturalSize
+      ? Math.abs(naturalSize.w / naturalSize.h - imageSlot.width / imageSlot.height) /
+          (imageSlot.width / imageSlot.height) >
+        0.15
+      : false;
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -308,6 +334,39 @@ export default function SortableBlockEditor({
           </div>
 
           <label className="block text-xs font-bold mt-3 mb-1">Imatge</label>
+          {imageSlot ? (
+            <div className="mb-2 p-2 rounded-lg border border-gray-200 bg-gray-50 text-[11px]">
+              <div className="flex items-center justify-between gap-2">
+                <span>
+                  Mida ideal ara:{" "}
+                  <strong>
+                    {imageSlot.width} × {imageSlot.height} px
+                  </strong>{" "}
+                  <span className="text-gray-400">({imageSlot.ratio})</span>
+                </span>
+                <a
+                  href={imageSlot.canvaUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="shrink-0 px-2 py-1 rounded font-bold text-white"
+                  style={{ background: "#1a3a5c" }}
+                  title={`Plantilla de Canva: ${imageSlot.canvaTitle}`}
+                >
+                  Crea-la amb Canva ↗
+                </a>
+              </div>
+              {ratioMismatch && naturalSize && (
+                <div className="mt-1.5 text-amber-800">
+                  Aquesta imatge és {naturalSize.w} × {naturalSize.h}: no té la mateixa forma i es
+                  retallarà pel centre.
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="mb-2 p-2 rounded-lg border border-gray-200 bg-gray-50 text-[11px] text-gray-500">
+              Amb cinc blocs actius només el bloc General mostra imatge; aquí no es veurà.
+            </div>
+          )}
           {block.imageUrl && (
             <div className="relative mb-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
