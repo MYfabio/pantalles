@@ -4,53 +4,63 @@
     android:layout_height="match_parent"
     android:background="@android:color/black">
 
-    <WebView
-        android:id="@+id/webView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
-    <!-- Error / inactive notice, over the top of whatever is loaded. -->
-    <LinearLayout
-        android:id="@+id/errorPanel"
+    <!-- Everything that is "the picture" lives in here so it can be rotated
+         as one unit. Its size is set in code to the screen's dimensions
+         swapped, so that after rotation it fills the screen exactly. -->
+    <FrameLayout
+        android:id="@+id/content"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/kiosko_navy"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:padding="48dp"
-        android:visibility="gone">
+        android:layout_gravity="center">
 
-        <TextView
-            android:id="@+id/errorText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:textColor="@android:color/white"
-            android:textSize="22sp" />
+        <WebView
+            android:id="@+id/webView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
 
+        <!-- Error / inactive notice, over the top of whatever is loaded. -->
         <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="28dp"
-            android:orientation="horizontal">
+            android:id="@+id/errorPanel"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/kiosko_navy"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="48dp"
+            android:visibility="gone">
 
-            <Button
-                android:id="@+id/retryButton"
+            <TextView
+                android:id="@+id/errorText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/retry" />
+                android:gravity="center"
+                android:textColor="@android:color/white"
+                android:textSize="22sp" />
 
-            <Button
-                android:id="@+id/settingsButton"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:text="@string/settings_title" />
+                android:layout_marginTop="28dp"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/retryButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/retry" />
+
+                <Button
+                    android:id="@+id/settingsButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:text="@string/settings_title" />
+            </LinearLayout>
         </LinearLayout>
-    </LinearLayout>
+    </FrameLayout>
 
-    <!-- Invisible corner target: five taps here opens settings. There is no
-         visible control, so nothing for a passer-by to poke at. -->
+    <!-- Invisible corner target: five taps here opens settings. Kept outside
+         the rotated content so "top-left" always means the physical corner. -->
     <View
         android:id="@+id/settingsTarget"
         android:layout_width="96dp"

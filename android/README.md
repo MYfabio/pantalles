@@ -85,6 +85,20 @@ apksigner sign --ks kiosko.keystore --out kiosko.apk app-release-unsigned.apk
 4. Introdueix l'adreça i l'identificador de la pantalla, i prem **Provar** per
    confirmar que el servidor respon abans de desar.
 
+## Orientació
+
+Els reproductors de TV (sticks, Chromecast) només treuen imatge en
+horitzontal, i els panells de Kiosko són verticals. L'app ho resol girant la
+imatge ella mateixa: **per defecte gira 90°**, que és el cas d'una pantalla
+muntada de costat amb el cable a baix. A la configuració es pot triar:
+
+| Opció | Quan |
+|---|---|
+| Vertical (cable a baix) | Pantalla de costat, cable per sota — el cas habitual |
+| Vertical (cable a dalt) | Pantalla de costat, cable per sobre |
+| Horitzontal | Televisor en posició normal |
+| Horitzontal invertit | Televisor cap per avall (muntatge al sostre) |
+
 Per tornar a la configuració un cop està funcionant: **cinc tocs seguits a la
 cantonada superior esquerra**. No hi ha cap botó visible, a propòsit.
 

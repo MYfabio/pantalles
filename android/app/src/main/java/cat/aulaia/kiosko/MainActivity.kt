@@ -8,8 +8,10 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
+import android.widget.FrameLayout
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -90,6 +92,35 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         goFullscreen()
+        // Re-applied here so a change made in settings takes effect on return.
+        applyRotation()
+    }
+
+    // --------------------------------------------------------------- rotation
+
+    /**
+     * Rotates the content container to match how the screen is mounted.
+     *
+     * A TV stick always outputs landscape, so for a portrait panel the app
+     * turns the picture itself. The container is sized to the screen with its
+     * sides swapped and centred; rotating it about its centre then fills the
+     * screen exactly, and Android maps touches through the rotation for us.
+     */
+    private fun applyRotation() {
+        val degrees = prefs.rotation
+        val root = binding.root
+        root.post {
+            val w = root.width
+            val h = root.height
+            if (w == 0 || h == 0) return@post
+            val sideways = degrees == 90 || degrees == 270
+            val lp = binding.content.layoutParams as FrameLayout.LayoutParams
+            lp.width = if (sideways) h else w
+            lp.height = if (sideways) w else h
+            lp.gravity = Gravity.CENTER
+            binding.content.layoutParams = lp
+            binding.content.rotation = degrees.toFloat()
+        }
     }
 
     override fun onStop() {

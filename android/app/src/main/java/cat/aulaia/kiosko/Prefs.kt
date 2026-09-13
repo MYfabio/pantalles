@@ -36,6 +36,18 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_KIOSK, true)
         set(value) = sp.edit().putBoolean(KEY_KIOSK, value).apply()
 
+    /**
+     * Degrees to rotate the content: 0, 90, 180 or 270.
+     *
+     * TV sticks only ever output landscape, but the panels are designed
+     * portrait, so the app rotates the picture itself. 90 is the default
+     * because a screen mounted on its side with the cable at the bottom is
+     * the common case; 270 is for the cable at the top.
+     */
+    var rotation: Int
+        get() = sp.getInt(KEY_ROTATION, DEFAULT_ROTATION)
+        set(value) = sp.edit().putInt(KEY_ROTATION, ((value % 360) + 360) % 360).apply()
+
     val isConfigured: Boolean
         get() = baseUrl.isNotEmpty() && slug.isNotEmpty()
 
@@ -48,6 +60,8 @@ class Prefs(context: Context) {
         const val KEY_SLUG = "slug"
         const val KEY_CACHE = "cached_playlist"
         const val KEY_KIOSK = "kiosk_mode"
+        const val KEY_ROTATION = "rotation"
         const val DEFAULT_BASE_URL = "https://kiosko.aulaia.cat"
+        const val DEFAULT_ROTATION = 90
     }
 }

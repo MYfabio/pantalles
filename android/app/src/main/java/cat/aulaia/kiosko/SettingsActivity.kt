@@ -28,6 +28,14 @@ class SettingsActivity : AppCompatActivity() {
         binding.baseUrlInput.setText(prefs.baseUrl)
         binding.slugInput.setText(prefs.slug)
         binding.kioskSwitch.isChecked = prefs.kioskMode
+        binding.orientationGroup.check(
+            when (prefs.rotation) {
+                270 -> R.id.orientationPortraitFlipped
+                0 -> R.id.orientationLandscape
+                180 -> R.id.orientationLandscapeFlipped
+                else -> R.id.orientationPortrait
+            }
+        )
 
         binding.testButton.setOnClickListener { test() }
         binding.saveButton.setOnClickListener { save() }
@@ -81,6 +89,12 @@ class SettingsActivity : AppCompatActivity() {
         prefs.baseUrl = base
         prefs.slug = slug
         prefs.kioskMode = binding.kioskSwitch.isChecked
+        prefs.rotation = when (binding.orientationGroup.checkedRadioButtonId) {
+            R.id.orientationPortraitFlipped -> 270
+            R.id.orientationLandscape -> 0
+            R.id.orientationLandscapeFlipped -> 180
+            else -> 90
+        }
 
         startActivity(
             Intent(this, MainActivity::class.java)

@@ -66,6 +66,52 @@
             android:textColor="@android:color/darker_gray"
             android:textSize="13sp" />
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:text="@string/settings_orientation"
+            android:textStyle="bold" />
+
+        <RadioGroup
+            android:id="@+id/orientationGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="vertical">
+
+            <RadioButton
+                android:id="@+id/orientationPortrait"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/orientation_portrait" />
+
+            <RadioButton
+                android:id="@+id/orientationPortraitFlipped"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/orientation_portrait_flipped" />
+
+            <RadioButton
+                android:id="@+id/orientationLandscape"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/orientation_landscape" />
+
+            <RadioButton
+                android:id="@+id/orientationLandscapeFlipped"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/orientation_landscape_flipped" />
+        </RadioGroup>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/settings_orientation_help"
+            android:textColor="@android:color/darker_gray"
+            android:textSize="13sp" />
+
         <com.google.android.material.materialswitch.MaterialSwitch
             android:id="@+id/kioskSwitch"
             android:layout_width="match_parent"
