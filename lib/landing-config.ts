@@ -9,8 +9,9 @@ export const ALTA_FORM_URL = "https://www.aulaia.cat/contacte";
 /**
  * Direct download for the Android player APK.
  *
- * Empty on purpose while the app does not exist yet: the download section
- * renders as "properament" instead of offering a link that leads nowhere.
- * Set it and the buttons light up.
+ * Built by .github/workflows/android.yml on every change under android/ and
+ * uploaded to one moving GitHub release, so this address never changes.
+ * Leave it empty to show the download section as "properament".
  */
-export const ANDROID_APK_URL = "";
+export const ANDROID_APK_URL =
+  "https://github.com/MYfabio/pantalles/releases/download/kiosko-android/kiosko.apk";
