@@ -7,4 +7,5 @@ captures/
 .externalNativeBuild/
 .cxx/
 *.apk
-*.keystore
+# release keys stay out; app/debug.keystore is deliberately tracked (see build.gradle.kts)
+release*.keystore

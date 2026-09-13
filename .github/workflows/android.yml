@@ -1,0 +1,73 @@
+# Builds the Kiosko Android player and publishes the APK.
+#
+# Every build lands on the "kiosko-android" release, so the download address
+# never changes and the landing page can point at it once:
+#
+#   https://github.com/MYfabio/pantalles/releases/download/kiosko-android/kiosko.apk
+#
+# Also uploaded as a workflow artifact for builds that should not be published.
+name: Android APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "android/**"
+      - ".github/workflows/android.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: android-actions/setup-android@v3
+
+      # The wrapper jar is not committed; the Gradle action provides Gradle
+      # itself, so the wrapper is not needed here.
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
+      - name: Build release APK
+        run: gradle assembleRelease --no-daemon
+
+      - name: Name the artifact
+        run: cp app/build/outputs/apk/release/app-release.apk kiosko.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kiosko-apk
+          path: android/kiosko.apk
+
+      # Keep one moving release rather than a tag per build: the devices only
+      # ever want "the current version".
+      - name: Publish to the kiosko-android release
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          TAG=kiosko-android
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" kiosko.apk --clobber
+            gh release edit "$TAG" --notes "Build ${GITHUB_SHA::7} · $(date -u +'%Y-%m-%d %H:%M UTC')"
+          else
+            gh release create "$TAG" kiosko.apk \
+              --title "Kiosko per a Android" \
+              --notes "Build ${GITHUB_SHA::7} · $(date -u +'%Y-%m-%d %H:%M UTC')" \
+              --latest=false
+          fi
