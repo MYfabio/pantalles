@@ -89,6 +89,7 @@ export default function SortableBlockEditor({
   const [collapsed, setCollapsed] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [improving, setImproving] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -158,6 +159,33 @@ export default function SortableBlockEditor({
       alert(error?.message || "Error millorant el text");
     } finally {
       setImproving(false);
+    }
+  };
+
+  const handleGenerateImage = async () => {
+    if (!imageSlot) return;
+    if (!block.title.trim() && !block.text.trim()) {
+      alert("Escriu primer un títol o un text: la imatge es genera a partir d'ells");
+      return;
+    }
+    setGenerating(true);
+    try {
+      const res = await fetch("/api/generate-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: block.title,
+          text: block.text,
+          ratio: imageSlot.ratio,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Error generant la imatge");
+      onChange(block.id, { imageUrl: data.url });
+    } catch (error: any) {
+      alert(error?.message || "Error generant la imatge");
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -344,16 +372,28 @@ export default function SortableBlockEditor({
                   </strong>{" "}
                   <span className="text-gray-400">({imageSlot.ratio})</span>
                 </span>
-                <a
-                  href={imageSlot.canvaUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="shrink-0 px-2 py-1 rounded font-bold text-white"
-                  style={{ background: "#1a3a5c" }}
-                  title={`Plantilla de Canva: ${imageSlot.canvaTitle}`}
-                >
-                  Crea-la amb Canva ↗
-                </a>
+                <div className="flex shrink-0 gap-1">
+                  <button
+                    type="button"
+                    onClick={handleGenerateImage}
+                    disabled={generating}
+                    className="px-2 py-1 rounded font-bold text-white disabled:opacity-60"
+                    style={{ background: "#a00842" }}
+                    title="Genera una imatge a partir del títol i el text, a la mida d'aquest forat"
+                  >
+                    {generating ? "Generant…" : "✨ Genera amb IA"}
+                  </button>
+                  <a
+                    href={imageSlot.canvaUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-2 py-1 rounded font-bold text-white"
+                    style={{ background: "#1a3a5c" }}
+                    title={`Plantilla de Canva: ${imageSlot.canvaTitle}`}
+                  >
+                    Canva ↗
+                  </a>
+                </div>
               </div>
               {ratioMismatch && naturalSize && (
                 <div className="mt-1.5 text-amber-800">

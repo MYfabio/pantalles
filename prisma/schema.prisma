@@ -127,6 +127,17 @@ model Settings {
   logoUrl        String?
 }
 
+// Uploaded and AI-generated images, kept in the database so the app needs no
+// external file service. Served by /api/images/[id]. Rows are immutable, which
+// lets that route send them with a long cache lifetime.
+model StoredImage {
+  id        String   @id @default(cuid())
+  mime      String
+  bytes     Bytes
+  size      Int
+  createdAt DateTime @default(now())
+}
+
 model SustainabilityIndicator {
   id           String   @id @default(cuid())
   key          String   @unique

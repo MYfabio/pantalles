@@ -62,8 +62,10 @@ npm run seed
 npm run dev
 ```
 
-Variables: `DATABASE_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `GEMINI_API_KEY`,
-`BLOB_READ_WRITE_TOKEN`.
+Variables: `DATABASE_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `GEMINI_API_KEY`.
+
+Les imatges (pujades i generades amb IA) es guarden a la mateixa base de dades
+i se serveixen des de `/api/images/<id>`: no cal cap servei de fitxers extern.
 
 ## Desplegament
 
@@ -88,6 +90,6 @@ Configuració necessària al servei de Railway:
    - `NEXTAUTH_URL` → `https://kiosko.aulaia.cat`. Ha de coincidir exactament amb
      el domini pel qual s'hi accedeix; si apunta a `localhost` o al domini
      provisional, el login entra en bucle de redirecció.
-   - `NEXTAUTH_SECRET`, `GEMINI_API_KEY`, `BLOB_READ_WRITE_TOKEN`.
+   - `NEXTAUTH_SECRET`, `GEMINI_API_KEY`.
 3. El primer desplegament crea les taules però **no** l'usuari administrador:
    cal executar `npm run seed` un cop contra la base de dades de Railway.
