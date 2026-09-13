@@ -14,7 +14,7 @@
     <string name="settings_kiosk">Mode quiosc</string>
     <string name="settings_kiosk_help">Fixa l\'aplicació perquè no se\'n pugui sortir. Només té efecte si el dispositiu s\'ha provisionat com a propietari (vegeu el manual).</string>
     <string name="settings_orientation">Orientació de la pantalla</string>
-    <string name="settings_orientation_help">Els reproductors de TV només treuen imatge en horitzontal; l'app gira la imatge ella mateixa. Tria segons com estigui muntada la pantalla.</string>
+    <string name="settings_orientation_help">"Els reproductors de TV només treuen imatge en horitzontal; l'app gira la imatge ella mateixa. Tria segons com estigui muntada la pantalla."</string>
     <string name="orientation_portrait">Vertical (cable a baix)</string>
     <string name="orientation_portrait_flipped">Vertical (cable a dalt)</string>
     <string name="orientation_landscape">Horitzontal</string>
