@@ -13,6 +13,33 @@ prèvia a mida real.
 Cada bloc admet una **finestra de publicació** (`des de` / `fins a`): fora
 d'aquestes dates desapareix sol de les pantalles, sense haver-hi de tornar.
 
+## Editor de panells
+
+L'editor (`/dashboard/panel`) té quatre mòduls plegables a l'esquerra (Capçalera,
+Aparença, Blocs, Pantalles) i la previsualització fixa a la dreta. Dels blocs
+només s'obre el que s'edita; la resta es veuen com una línia amb el títol, el
+tipus, les dates de publicació i el mitjà. La barra de dalt diu si hi ha canvis
+sense desar, i «Duplica» crea un panell nou a partir de l'actual.
+
+## Aparença per panell
+
+Cada panell pot tenir el seu color de capçalera i de peu i una mida de lletra
+(`Panel.themePrimary`, `themeDark`, `fontScale`; `lib/panel-theme.ts`). Sense
+res desat, hereta el granat del centre: els panells que ja existien no canvien.
+Hi ha sis combinacions preparades amb contrast comprovat i un color propi; si
+el text blanc no arribaria al contrast mínim, l'editor avisa. Els colors de
+cada bloc (General, Secretaria, ESO…) no canvien mai: diuen el tipus d'avís.
+
+## Vídeo als blocs
+
+Un bloc pot portar un vídeo curt en lloc d'una imatge (`PanelBlock.videoUrl`):
+MP4 o WebM, màxim 30 segons i 15 MB (`lib/media-limits.ts`). L'editor en llegeix
+la durada i en treu un fotograma abans de pujar-lo; el fotograma es guarda com
+a `imageUrl` i fa de reserva a les pantalles que no puguin reproduir-lo. A la
+pantalla es reprodueix sense so i en bucle. Es guarda a la mateixa taula que
+les imatges i es serveix per `/api/media/<id>`, que admet la capçalera `Range`
+(els reproductors Android no arrenquen sense un 206).
+
 ## Rotació de continguts a les pantalles
 
 Cada pantalla té una llista ordenada d'URLs amb els seus segons, editable a
