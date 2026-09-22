@@ -7,3 +7,4 @@ node_modules/
 
 # TypeScript incremental build cache
 tsconfig.tsbuildinfo
+.env*.local
