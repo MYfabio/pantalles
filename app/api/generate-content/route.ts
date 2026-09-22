@@ -99,7 +99,11 @@ export async function POST(req: NextRequest) {
 
   // Gemini deprecates/renames model ids over time; try a preferred model first
   // and fall back to a rolling alias if it 404s.
-  const MODEL_CANDIDATES = ["gemini-2.5-flash", "gemini-flash-latest"];
+  // Google retira i canvia de nom els models. El primer candidat es pot fixar
+  // amb la variable GEMINI_MODEL sense tocar codi; la resta son de reserva.
+  const MODEL_CANDIDATES = [process.env.GEMINI_MODEL, "gemini-3.6-flash", "gemini-2.5-flash", "gemini-flash-latest"].filter(
+    (m): m is string => Boolean(m)
+  );
   let lastError: any = null;
 
   for (const modelName of MODEL_CANDIDATES) {

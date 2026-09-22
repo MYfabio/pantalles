@@ -13,7 +13,11 @@ Regles:
 - To institucional pero proper.
 - Devuelve ÚNICAMENTE el text millorat, sense cometes, sense explicacions, sense markdown.`;
 
-const MODEL_CANDIDATES = ["gemini-2.5-flash", "gemini-flash-latest"];
+// Google retira i canvia de nom els models. El primer candidat es pot fixar
+// amb la variable GEMINI_MODEL sense tocar codi; la resta son de reserva.
+const MODEL_CANDIDATES = [process.env.GEMINI_MODEL, "gemini-3.6-flash", "gemini-2.5-flash", "gemini-flash-latest"].filter(
+  (m): m is string => Boolean(m)
+);
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
