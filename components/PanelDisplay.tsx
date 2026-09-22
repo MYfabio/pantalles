@@ -93,6 +93,30 @@ function pad(n: number) {
   return String(n).padStart(2, "0");
 }
 
+/**
+ * El text d'un bloc s'escriu en un textarea, aixi que els salts de linia
+ * son a proposit: una linia per aula, per horari, per avis. Pintar-lo dins
+ * d'un sol paragraf els aplana i el que a l'editor era una llista surt a la
+ * pantalla com una frase llarga. Aqui cada linia es una linia, i si totes
+ * comencen amb un guio o un punt, es una llista amb vinyetes.
+ */
+function BlockText({ text }: { text: string }) {
+  const lines = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (lines.length <= 1) return <p>{text.trim()}</p>;
+  const bullet = /^[-•*·]\s*/;
+  const isList = lines.every((l) => bullet.test(l));
+  return (
+    <p className={isList ? "panel-lines panel-lines-list" : "panel-lines"}>
+      {lines.map((l, i) => (
+        <span key={i}>{isList ? l.replace(bullet, "") : l}</span>
+      ))}
+    </p>
+  );
+}
+
 export default function PanelDisplay({
   blocks,
   settings,
@@ -240,7 +264,7 @@ export default function PanelDisplay({
                     <span className="panel-icon">{ICONS[item.key]}</span>
                   </div>
                   {item.title && <h2>{item.title}</h2>}
-                  {item.text && <p>{item.text}</p>}
+                  {item.text && <BlockText text={item.text} />}
                   <div className="panel-meta">
                     {item.date ? <span className="panel-date-pill">{item.date}</span> : <span />}
                     {item.typeText && <span className="panel-type">{item.typeText}</span>}
@@ -274,7 +298,7 @@ export default function PanelDisplay({
                     <span className="panel-icon">{ICONS[item.key]}</span>
                   </div>
                   {item.title && <h3>{item.title}</h3>}
-                  {item.text && <p>{item.text}</p>}
+                  {item.text && <BlockText text={item.text} />}
                 </div>
                 <div className="panel-meta">
                   {item.date ? <span className="panel-date-pill">{item.date}</span> : <span />}
@@ -450,6 +474,19 @@ export default function PanelDisplay({
           margin: 18px 0 10px;
           font-size: 36px;
           line-height: 1.08;
+        }
+        .panel-lines span {
+          display: block;
+        }
+        .panel-lines-list span {
+          padding-left: 0.9em;
+          text-indent: -0.9em;
+        }
+        .panel-lines-list span::before {
+          content: "•";
+          display: inline-block;
+          width: 0.9em;
+          text-indent: 0;
         }
         .panel-card p {
           margin: 0;
