@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { clampFontScale, isHexColor } from "@/lib/panel-theme";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     showSustainability,
     sustainabilityImageUrl,
     screenIds,
+    themePrimary,
+    themeDark,
+    fontScale,
   } = await req.json();
 
   try {
@@ -35,6 +39,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         quoteText,
         showSustainability,
         sustainabilityImageUrl,
+        // Un color que no sigui #rrggbb es descarta: el panell torna a heretar.
+        ...(themePrimary !== undefined && {
+          themePrimary: isHexColor(themePrimary) ? themePrimary.toLowerCase() : null,
+        }),
+        ...(themeDark !== undefined && {
+          themeDark: isHexColor(themeDark) ? themeDark.toLowerCase() : null,
+        }),
+        ...(fontScale !== undefined && { fontScale: clampFontScale(fontScale) }),
       },
     });
 

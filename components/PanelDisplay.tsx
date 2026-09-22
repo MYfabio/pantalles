@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { imageSlotFor } from "@/lib/panel-layout";
+import { DEFAULT_THEME, tintFor, type PanelTheme } from "@/lib/panel-theme";
 
 export const COLORS: Record<string, string> = {
   general: "#a00842",
@@ -77,6 +78,8 @@ export interface PanelBlockData {
   date: string;
   typeText: string;
   imageUrl?: string | null;
+  /** Vídeo curt sense so. Si n'hi ha, imageUrl és el fotograma de reserva. */
+  videoUrl?: string | null;
 }
 
 export interface PanelSettingsData {
@@ -87,6 +90,8 @@ export interface PanelSettingsData {
   quoteText?: string | null;
   showSustainability?: boolean;
   sustainabilityImageUrl?: string | null;
+  /** Aparença pròpia del panell; sense ella, el granat de sempre. */
+  theme?: PanelTheme | null;
 }
 
 function pad(n: number) {
@@ -114,6 +119,41 @@ function BlockText({ text }: { text: string }) {
         <span key={i}>{isList ? l.replace(bullet, "") : l}</span>
       ))}
     </p>
+  );
+}
+
+/**
+ * El vídeo d'una targeta. Sense so i en bucle: a la pantalla no hi ha ningú
+ * per activar el so, i els navegadors no deixen arrencar sol un vídeo que en
+ * tingui. React no escriu l'atribut `muted` al HTML que serveix el servidor,
+ * així que es fixa a mà quan l'element existeix; si no, el reproductor
+ * Android es queda amb el fotograma de reserva i no arrenca mai.
+ */
+function CardVideo({
+  src,
+  poster,
+  className,
+  style,
+}: {
+  src: string;
+  poster?: string | null;
+  className: string;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <video
+      ref={(el) => {
+        if (el) el.muted = true;
+      }}
+      src={src}
+      poster={poster || undefined}
+      className={className}
+      style={style}
+      autoPlay
+      muted
+      loop
+      playsInline
+    />
   );
 }
 
@@ -191,8 +231,18 @@ export default function PanelDisplay({
   if (count === 3 || count === 4) rows = "1fr 1fr";
   else if (count >= 5) rows = "repeat(3,1fr)";
 
+  // L'aparença entra com a variables CSS a l'arrel del panell: la resta de
+  // l'estil no ha de saber si el color és el del centre o un de propi.
+  const theme = settings.theme ?? DEFAULT_THEME;
+  const screenStyle = {
+    ["--panel-primary" as string]: theme.primary,
+    ["--panel-dark" as string]: theme.dark,
+    ["--panel-tint" as string]: tintFor(theme.primary),
+    ["--panel-scale" as string]: String(theme.fontScale),
+  } as React.CSSProperties;
+
   return (
-    <div className="panel-screen">
+    <div className="panel-screen" style={screenStyle}>
       <header className="panel-top">
         <div className="panel-logo-area">
           {settings.logoUrl ? (
@@ -249,14 +299,23 @@ export default function PanelDisplay({
             const cardStyle = { ["--accent" as string]: COLORS[item.key] } as React.CSSProperties;
             return (
               <article className="panel-card panel-card-fullscreen" style={cardStyle}>
-                {item.imageUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={item.imageUrl}
-                    alt=""
+                {item.videoUrl ? (
+                  <CardVideo
+                    src={item.videoUrl}
+                    poster={item.imageUrl}
                     className="panel-card-fullscreen-image"
                     style={{ aspectRatio: "1016 / 762" }}
                   />
+                ) : (
+                  item.imageUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={item.imageUrl}
+                      alt=""
+                      className="panel-card-fullscreen-image"
+                      style={{ aspectRatio: "1016 / 762" }}
+                    />
+                  )
                 )}
                 <div className="panel-card-fullscreen-body">
                   <div className="panel-card-head">
@@ -283,14 +342,24 @@ export default function PanelDisplay({
             } as React.CSSProperties;
             return (
               <article key={item.key} className="panel-card" style={cardStyle}>
-                {item.imageUrl && slot && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={item.imageUrl}
-                    alt=""
+                {slot && item.videoUrl ? (
+                  <CardVideo
+                    src={item.videoUrl}
+                    poster={item.imageUrl}
                     className="panel-card-image"
                     style={{ aspectRatio: `${slot.width} / ${slot.height}` }}
                   />
+                ) : (
+                  item.imageUrl &&
+                  slot && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={item.imageUrl}
+                      alt=""
+                      className="panel-card-image"
+                      style={{ aspectRatio: `${slot.width} / ${slot.height}` }}
+                    />
+                  )
                 )}
                 <div className="panel-card-body">
                   <div className="panel-card-head">
@@ -323,7 +392,7 @@ export default function PanelDisplay({
           color: #222;
         }
         .panel-top {
-          background: #a00842;
+          background: var(--panel-primary);
           color: #fff;
           padding: 36px 44px;
           display: grid;
@@ -421,7 +490,7 @@ export default function PanelDisplay({
           padding: 32px;
           display: grid;
           gap: 20px;
-          background: linear-gradient(135deg, rgba(160, 8, 66, 0.045) 0 14%, transparent 14%);
+          background: linear-gradient(135deg, var(--panel-tint) 0 14%, transparent 14%);
         }
         .panel-empty {
           grid-column: 1 / -1;
@@ -472,7 +541,7 @@ export default function PanelDisplay({
         }
         .panel-card h3 {
           margin: 18px 0 10px;
-          font-size: 36px;
+          font-size: calc(36px * var(--panel-scale));
           line-height: 1.08;
         }
         .panel-lines span {
@@ -490,7 +559,7 @@ export default function PanelDisplay({
         }
         .panel-card p {
           margin: 0;
-          font-size: 26px;
+          font-size: calc(26px * var(--panel-scale));
           line-height: 1.28;
           font-weight: 700;
           color: var(--accent);
@@ -527,12 +596,12 @@ export default function PanelDisplay({
         }
         .panel-card-fullscreen h2 {
           margin: 28px 0 20px;
-          font-size: 88px;
+          font-size: calc(88px * var(--panel-scale));
           line-height: 1.05;
         }
         .panel-card-fullscreen p {
           margin: 0;
-          font-size: 42px;
+          font-size: calc(42px * var(--panel-scale));
           line-height: 1.35;
           font-weight: 700;
           color: var(--accent);
@@ -560,7 +629,7 @@ export default function PanelDisplay({
           white-space: nowrap;
         }
         .panel-bottom {
-          background: #a00842;
+          background: var(--panel-dark);
         }
       `}</style>
     </div>

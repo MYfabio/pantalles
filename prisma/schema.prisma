@@ -89,6 +89,10 @@ model Panel {
   quoteText              String?
   showSustainability     Boolean      @default(true)
   sustainabilityImageUrl String?
+  // Aparenca propia del panell. Nuls = hereta el granat del centre (lib/panel-theme.ts).
+  themePrimary           String?
+  themeDark              String?
+  fontScale              Float        @default(1)
   createdAt              DateTime     @default(now())
   updatedAt              DateTime     @updatedAt
   blocks                 PanelBlock[]
@@ -106,6 +110,8 @@ model PanelBlock {
   date      String
   typeText  String
   imageUrl  String?
+  // Video curt sense so; si n'hi ha, imageUrl fa de fotograma de reserva.
+  videoUrl  String?
   // Optional publication window. Outside it the block is hidden on the public
   // panel, but stays visible in the editor so it can be prepared in advance.
   startsAt  DateTime?

@@ -21,7 +21,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: "No autoritzat" }, { status: 401 });
   }
 
-  const { enabled, title, text, date, typeText, imageUrl, startsAt, endsAt } = await req.json();
+  const { enabled, title, text, date, typeText, imageUrl, videoUrl, startsAt, endsAt } =
+    await req.json();
 
   try {
     const block = await prisma.panelBlock.update({
@@ -33,6 +34,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         date,
         typeText,
         imageUrl,
+        ...(videoUrl !== undefined && { videoUrl: videoUrl || null }),
         // An empty date input means "no limit".
         ...(startsAt !== undefined && { startsAt: toBoundary(startsAt, "start") }),
         ...(endsAt !== undefined && { endsAt: toBoundary(endsAt, "end") }),

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import PanelFullscreenFrame from "@/components/PanelFullscreenFrame";
+import { resolveTheme } from "@/lib/panel-theme";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,7 @@ export default async function PanelPage({ params }: { params: { slug: string } }
       date: b.date,
       typeText: b.typeText,
       imageUrl: b.imageUrl,
+      videoUrl: b.videoUrl,
     }));
 
   const indicatorData = sustainabilityIndicators.map((i) => ({
@@ -70,6 +72,7 @@ export default async function PanelPage({ params }: { params: { slug: string } }
         quoteText: panel.quoteText,
         showSustainability: panel.showSustainability,
         sustainabilityImageUrl: panel.sustainabilityImageUrl,
+        theme: resolveTheme(panel),
       }}
     />
   );

@@ -60,6 +60,9 @@ export async function POST(req: NextRequest) {
           quoteText: source.quoteText,
           showSustainability: source.showSustainability,
           sustainabilityImageUrl: source.sustainabilityImageUrl,
+          themePrimary: source.themePrimary,
+          themeDark: source.themeDark,
+          fontScale: source.fontScale,
         }),
       },
     });
@@ -75,6 +78,7 @@ export async function POST(req: NextRequest) {
           date: b.date,
           typeText: b.typeText,
           imageUrl: b.imageUrl,
+          videoUrl: b.videoUrl,
           startsAt: b.startsAt,
           endsAt: b.endsAt,
         }))
