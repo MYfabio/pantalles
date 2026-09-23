@@ -544,27 +544,31 @@ export default function PanelDisplay({
           font-size: calc(36px * var(--panel-scale));
           line-height: 1.08;
         }
-        .panel-lines span {
+        /* El text i el vídeo els pinten components fills (BlockText, CardVideo)
+           i styled-jsx no els posa la classe d'àmbit: sense :global() cap
+           d'aquestes regles els arribaria i el text sortiria minúscul. */
+        .panel-card :global(.panel-lines span) {
           display: block;
         }
-        .panel-lines-list span {
+        .panel-card :global(.panel-lines-list span) {
           padding-left: 0.9em;
           text-indent: -0.9em;
         }
-        .panel-lines-list span::before {
+        .panel-card :global(.panel-lines-list span::before) {
           content: "•";
           display: inline-block;
           width: 0.9em;
           text-indent: 0;
         }
-        .panel-card p {
+        .panel-card :global(p) {
           margin: 0;
           font-size: calc(26px * var(--panel-scale));
           line-height: 1.28;
           font-weight: 700;
           color: var(--accent);
         }
-        .panel-card-image {
+        .panel-card :global(.panel-card-image) {
+          display: block;
           width: 100%;
           object-fit: cover;
           border-radius: 16px;
@@ -581,7 +585,8 @@ export default function PanelDisplay({
           display: flex;
           flex-direction: column;
         }
-        .panel-card-fullscreen-image {
+        .panel-card-fullscreen :global(.panel-card-fullscreen-image) {
+          display: block;
           width: 100%;
           object-fit: cover;
           flex: 0 0 auto;
@@ -599,7 +604,7 @@ export default function PanelDisplay({
           font-size: calc(88px * var(--panel-scale));
           line-height: 1.05;
         }
-        .panel-card-fullscreen p {
+        .panel-card-fullscreen :global(p) {
           margin: 0;
           font-size: calc(42px * var(--panel-scale));
           line-height: 1.35;
