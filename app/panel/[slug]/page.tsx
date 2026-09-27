@@ -47,6 +47,7 @@ export default async function PanelPage({ params }: { params: { slug: string } }
       typeText: b.typeText,
       imageUrl: b.imageUrl,
       videoUrl: b.videoUrl,
+      fullBleed: b.fullBleed,
     }));
 
   const indicatorData = sustainabilityIndicators.map((i) => ({

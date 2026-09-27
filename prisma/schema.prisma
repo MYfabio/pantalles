@@ -112,6 +112,8 @@ model PanelBlock {
   imageUrl  String?
   // Video curt sense so; si n'hi ha, imageUrl fa de fotograma de reserva.
   videoUrl  String?
+  // Imatge o video a tota la pantalla sota la capcalera; mentre es actiu, amaga els altres blocs.
+  fullBleed Boolean   @default(false)
   // Optional publication window. Outside it the block is hidden on the public
   // panel, but stays visible in the editor so it can be prepared in advance.
   startsAt  DateTime?

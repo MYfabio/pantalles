@@ -79,6 +79,7 @@ export async function POST(req: NextRequest) {
           typeText: b.typeText,
           imageUrl: b.imageUrl,
           videoUrl: b.videoUrl,
+          fullBleed: b.fullBleed,
           startsAt: b.startsAt,
           endsAt: b.endsAt,
         }))

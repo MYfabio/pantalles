@@ -60,6 +60,8 @@ export interface EditableBlock {
   imageUrl: string | null;
   /** Vídeo curt sense so. Quan n'hi ha, imageUrl és el seu fotograma de reserva. */
   videoUrl: string | null;
+  /** La imatge o el vídeo ocupen tota la pantalla sota la capçalera. */
+  fullBleed: boolean;
   startsAt: string | null;
   endsAt: string | null;
   order: number;
@@ -310,8 +312,8 @@ export default function SortableBlockEditor({
   // un vídeo. Passar de vídeo a imatge deixa el fotograma com a imatge.
   const selectTab = (next: MediaTab) => {
     setTab(next);
-    if (next === "none" && (block.imageUrl || block.videoUrl)) {
-      onChange(block.id, { imageUrl: "", videoUrl: null });
+    if (next === "none" && (block.imageUrl || block.videoUrl || block.fullBleed)) {
+      onChange(block.id, { imageUrl: "", videoUrl: null, fullBleed: false });
     } else if (next === "image" && block.videoUrl) {
       onChange(block.id, { videoUrl: null });
     }
@@ -320,7 +322,9 @@ export default function SortableBlockEditor({
   const titleOver = block.title.length > TITLE_LIMIT;
   const textOver = block.text.length > TEXT_LIMIT;
 
-  const mediaLabel = block.videoUrl ? "vídeo" : block.imageUrl ? "imatge" : "sense mitjà";
+  const mediaLabel =
+    (block.videoUrl ? "vídeo" : block.imageUrl ? "imatge" : "sense mitjà") +
+    (block.fullBleed && (block.videoUrl || block.imageUrl) ? " a pantalla completa" : "");
   const meta = [block.date, block.typeText, status, mediaLabel].filter(Boolean).join(" · ");
 
   const tabClass = (t: MediaTab) =>
@@ -527,6 +531,21 @@ export default function SortableBlockEditor({
 
             {tab === "image" && (
               <>
+                <label className="flex items-start gap-2 mb-2 p-2 rounded-lg border border-gray-200 bg-white text-xs cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5"
+                    checked={block.fullBleed}
+                    onChange={(e) => onChange(block.id, { fullBleed: e.target.checked })}
+                  />
+                  <span>
+                    <strong className="block">A pantalla completa</strong>
+                    <span className="text-gray-500">
+                      Només es veu la capçalera i, a sota, la imatge ocupant-ho tot, sense títol ni text.
+                      Mentre aquest bloc sigui actiu, els altres no surten a la pantalla.
+                    </span>
+                  </span>
+                </label>
                 {imageSlot ? (
                   <div className="mb-2 p-2 rounded-lg border border-gray-200 bg-gray-50 text-[11px]">
                     <div className="flex items-center justify-between gap-2">
@@ -548,6 +567,7 @@ export default function SortableBlockEditor({
                         >
                           {generating ? "Generant…" : "✨ Genera amb IA"}
                         </button>
+                        {imageSlot.canvaUrl && (
                         <a
                           href={imageSlot.canvaUrl}
                           target="_blank"
@@ -558,6 +578,7 @@ export default function SortableBlockEditor({
                         >
                           Canva ↗
                         </a>
+                        )}
                       </div>
                     </div>
                     {ratioMismatch && naturalSize && (
@@ -598,7 +619,22 @@ export default function SortableBlockEditor({
 
             {tab === "video" && (
               <>
-                {!imageSlot && (
+                <label className="flex items-start gap-2 mb-2 p-2 rounded-lg border border-gray-200 bg-white text-xs cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5"
+                    checked={block.fullBleed}
+                    onChange={(e) => onChange(block.id, { fullBleed: e.target.checked })}
+                  />
+                  <span>
+                    <strong className="block">A pantalla completa</strong>
+                    <span className="text-gray-500">
+                      Només es veu la capçalera i, a sota, el vídeo ocupant-ho tot, sense títol ni text.
+                      Mentre aquest bloc sigui actiu, els altres no surten a la pantalla.
+                    </span>
+                  </span>
+                </label>
+                {!imageSlot && !block.fullBleed && (
                   <div className="mb-2 p-2 rounded-lg border border-gray-200 bg-gray-50 text-[11px] text-gray-500">
                     Amb cinc blocs actius només el bloc General mostra mitjans; aquí no es veurà.
                   </div>

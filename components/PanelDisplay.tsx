@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { imageSlotFor } from "@/lib/panel-layout";
+import { imageSlotFor, layoutFor, spansFullWidth } from "@/lib/panel-layout";
 import { DEFAULT_THEME, tintFor, type PanelTheme } from "@/lib/panel-theme";
 
 export const COLORS: Record<string, string> = {
@@ -80,6 +80,8 @@ export interface PanelBlockData {
   imageUrl?: string | null;
   /** Vídeo curt sense so. Si n'hi ha, imageUrl és el fotograma de reserva. */
   videoUrl?: string | null;
+  /** La imatge o el vídeo ocupen tot el que hi ha sota la capçalera. */
+  fullBleed?: boolean;
 }
 
 export interface PanelSettingsData {
@@ -120,6 +122,16 @@ function BlockText({ text }: { text: string }) {
       ))}
     </p>
   );
+}
+
+/** Els blocs que el panell pinta: actius i amb alguna cosa a dir. */
+export function isBlockShown(b: PanelBlockData): boolean {
+  return b.enabled && !!(b.title || b.text || b.date || b.typeText || isPosterBlock(b));
+}
+
+/** Un bloc marcat a pantalla completa que té de debò una imatge o un vídeo. */
+export function isPosterBlock(b: PanelBlockData): boolean {
+  return b.enabled && !!b.fullBleed && !!(b.imageUrl || b.videoUrl);
 }
 
 /**
@@ -223,13 +235,13 @@ export default function PanelDisplay({
       }).format(now)
     : "Carregant...";
 
-  const active = blocks.filter((b) => b.enabled && (b.title || b.text || b.date || b.typeText));
+  const active = blocks.filter(isBlockShown);
+  // Un bloc amb la imatge a pantalla completa ho ocupa tot mentre és actiu:
+  // és un cartell, i el primer que n'hi hagi mana sobre la resta.
+  const poster = active.find(isPosterBlock);
   const isFullscreenSingle = active.length === 1;
   const count = active.length || 1;
-  const columns = count === 1 ? 1 : 2;
-  let rows = "1fr";
-  if (count === 3 || count === 4) rows = "1fr 1fr";
-  else if (count >= 5) rows = "repeat(3,1fr)";
+  const layout = poster ? { columns: 1, rows: 1, sideImage: false } : layoutFor(count);
 
   // L'aparença entra com a variables CSS a l'arrel del panell: la resta de
   // l'estil no ha de saber si el color és el del centre o un de propi.
@@ -288,11 +300,21 @@ export default function PanelDisplay({
       </header>
 
       <section
-        className="panel-content"
-        style={{ gridTemplateColumns: `repeat(${columns},1fr)`, gridTemplateRows: rows }}
+        className={poster ? "panel-content panel-content-poster" : "panel-content"}
+        style={{
+          gridTemplateColumns: `repeat(${layout.columns},minmax(0,1fr))`,
+          gridTemplateRows: `repeat(${layout.rows},minmax(0,1fr))`,
+        }}
       >
         {active.length === 0 ? (
           <div className="panel-empty">Activa o omple almenys un bloc.</div>
+        ) : poster ? (
+          poster.videoUrl ? (
+            <CardVideo src={poster.videoUrl} poster={poster.imageUrl} className="panel-poster" />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={poster.imageUrl!} alt={poster.title || ""} className="panel-poster" />
+          )
         ) : isFullscreenSingle ? (
           (() => {
             const item = active[0];
@@ -334,20 +356,28 @@ export default function PanelDisplay({
           })()
         ) : (
           active.map((item, index) => {
-            const spanFull = (count === 3 && index === 0) || (count === 5 && item.key === "general");
+            const spanFull = spansFullWidth(count, item.key);
             const slot = imageSlotFor(count, index, item.key);
+            const side = layout.sideImage;
+            // A les targetes horitzontals la imatge omple l'alçada de la
+            // targeta i es retalla pel centre; la proporció la dona la targeta.
+            const mediaStyle = side ? undefined : { aspectRatio: `${slot?.width} / ${slot?.height}` };
             const cardStyle = {
               ["--accent" as string]: COLORS[item.key],
               ...(spanFull ? { gridColumn: "1 / -1" } : {}),
             } as React.CSSProperties;
             return (
-              <article key={item.key} className="panel-card" style={cardStyle}>
+              <article
+                key={item.key}
+                className={side ? "panel-card panel-card-side" : "panel-card"}
+                style={cardStyle}
+              >
                 {slot && item.videoUrl ? (
                   <CardVideo
                     src={item.videoUrl}
                     poster={item.imageUrl}
                     className="panel-card-image"
-                    style={{ aspectRatio: `${slot.width} / ${slot.height}` }}
+                    style={mediaStyle}
                   />
                 ) : (
                   item.imageUrl &&
@@ -357,10 +387,11 @@ export default function PanelDisplay({
                       src={item.imageUrl}
                       alt=""
                       className="panel-card-image"
-                      style={{ aspectRatio: `${slot.width} / ${slot.height}` }}
+                      style={mediaStyle}
                     />
                   )
                 )}
+                <div className="panel-card-main">
                 <div className="panel-card-body">
                   <div className="panel-card-head">
                     <span className="panel-badge">{LABELS[item.key]}</span>
@@ -372,6 +403,7 @@ export default function PanelDisplay({
                 <div className="panel-meta">
                   {item.date ? <span className="panel-date-pill">{item.date}</span> : <span />}
                   {item.typeText && <span className="panel-type">{item.typeText}</span>}
+                </div>
                 </div>
               </article>
             );
@@ -574,6 +606,36 @@ export default function PanelDisplay({
           border-radius: 16px;
           margin-bottom: 16px;
           flex: 0 0 auto;
+        }
+        .panel-card-main {
+          flex: 1;
+          min-height: 0;
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+        }
+        .panel-card-side {
+          flex-direction: row;
+          align-items: stretch;
+          gap: 28px;
+        }
+        .panel-card-side :global(.panel-card-image) {
+          width: 46%;
+          height: 100%;
+          margin-bottom: 0;
+        }
+        .panel-content-poster {
+          padding: 0;
+          background: #000;
+        }
+        .panel-content :global(.panel-poster) {
+          grid-column: 1 / -1;
+          display: block;
+          width: 100%;
+          height: 100%;
+          min-height: 0;
+          object-fit: cover;
         }
         .panel-card-body {
           flex: 1;

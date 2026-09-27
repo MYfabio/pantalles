@@ -214,11 +214,11 @@ export default function HelpPage() {
           <tbody className="divide-y">
             {[
               { blocs: "1", card: "Pantalla completa", slot: IMAGE_SLOTS.FULL },
-              { blocs: "2", card: "Dues columnes altes", slot: IMAGE_SLOTS.TALL },
-              { blocs: "3", card: "El primer, ample a dalt", slot: IMAGE_SLOTS.WIDE },
-              { blocs: "3", card: "Els dos de sota", slot: IMAGE_SLOTS.SMALL },
+              { blocs: "2", card: "Dues files, imatge a l'esquerra", slot: IMAGE_SLOTS.TALL },
+              { blocs: "3", card: "Tres files, imatge a l'esquerra", slot: IMAGE_SLOTS.SMALL },
               { blocs: "4", card: "Quadrícula 2×2", slot: IMAGE_SLOTS.SMALL },
               { blocs: "5", card: "General, ample a dalt", slot: IMAGE_SLOTS.WIDE },
+              { blocs: "Qualsevol", card: "Imatge a pantalla completa", slot: IMAGE_SLOTS.POSTER },
             ].map((row, i) => (
               <tr key={i}>
                 <td className="px-3 py-2 font-medium">{row.blocs}</td>
@@ -228,15 +228,19 @@ export default function HelpPage() {
                   <span className="text-gray-400">({row.slot.ratio})</span>
                 </td>
                 <td className="px-3 py-2">
-                  <a
-                    href={row.slot.canvaUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="font-medium"
-                    style={{ color: "#4a8abf" }}
-                  >
-                    {row.slot.canvaTitle} ↗
-                  </a>
+                  {row.slot.canvaUrl ? (
+                    <a
+                      href={row.slot.canvaUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-medium"
+                      style={{ color: "#4a8abf" }}
+                    >
+                      {row.slot.canvaTitle} ↗
+                    </a>
+                  ) : (
+                    <span className="text-gray-400">Sense plantilla</span>
+                  )}
                 </td>
               </tr>
             ))}

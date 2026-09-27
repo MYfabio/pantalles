@@ -21,7 +21,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: "No autoritzat" }, { status: 401 });
   }
 
-  const { enabled, title, text, date, typeText, imageUrl, videoUrl, startsAt, endsAt } =
+  const { enabled, title, text, date, typeText, imageUrl, videoUrl, fullBleed, startsAt, endsAt } =
     await req.json();
 
   try {
@@ -35,6 +35,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         typeText,
         imageUrl,
         ...(videoUrl !== undefined && { videoUrl: videoUrl || null }),
+        ...(fullBleed !== undefined && { fullBleed: fullBleed === true }),
         // An empty date input means "no limit".
         ...(startsAt !== undefined && { startsAt: toBoundary(startsAt, "start") }),
         ...(endsAt !== undefined && { endsAt: toBoundary(endsAt, "end") }),

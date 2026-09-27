@@ -18,8 +18,8 @@ import SustainabilityModuleEditor, {
   EditableIndicator,
 } from "@/components/panel/SustainabilityModuleEditor";
 import Module from "@/components/panel/Module";
-import PanelDisplay from "@/components/PanelDisplay";
-import { imageSlotFor, layoutLabel } from "@/lib/panel-layout";
+import PanelDisplay, { isBlockShown, isPosterBlock } from "@/components/PanelDisplay";
+import { imageSlotFor, layoutLabel, IMAGE_SLOTS } from "@/lib/panel-layout";
 import {
   THEME_PRESETS,
   FONT_SCALES,
@@ -83,7 +83,10 @@ export default function PanelEditorPage() {
   const [screenIds, setScreenIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [duplicating, setDuplicating] = useState(false);
+  const [copying, setCopying] = useState(false);
+  // L'editor es fa per pantalla: la que tens triada és la que estàs editant.
+  // Un mateix contingut (panell) es pot mostrar a més d'una pantalla.
+  const [screenId, setScreenId] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingSustainabilityImage, setUploadingSustainabilityImage] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
@@ -134,7 +137,7 @@ export default function PanelEditorPage() {
   }, []);
 
   const loadData = useCallback(
-    async (preferredPanelId?: string) => {
+    async (preferredPanelId?: string, preferredScreenId?: string) => {
       setLoading(true);
       try {
         const [panelsRes, screensRes, sustainabilityRes] = await Promise.all([
@@ -154,6 +157,11 @@ export default function PanelEditorPage() {
         if (chosen) {
           applyPanel(chosen);
           await loadBlocks(chosen.id);
+          setScreenId(
+            preferredScreenId && chosen.screenIds.includes(preferredScreenId)
+              ? preferredScreenId
+              : chosen.screenIds[0] ?? null
+          );
         }
         setCleanTick((t) => t + 1);
       } catch (error) {
@@ -226,67 +234,123 @@ export default function PanelEditorPage() {
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
 
-  const switchPanel = async (id: string) => {
+  const switchPanel = async (id: string, nextScreenId: string | null = null) => {
     const panel = panels.find((p) => p.id === id);
     if (!panel) return;
-    if (dirty && !confirm("Aquest panell té canvis sense desar. Vols canviar de panell i perdre'ls?")) {
+    if (id === panelId) {
+      setScreenId(nextScreenId);
+      return;
+    }
+    if (dirty && !confirm("Aquesta pantalla té canvis sense desar. Vols canviar-ne i perdre'ls?")) {
       return;
     }
     setLoading(true);
     try {
       applyPanel(panel);
       await loadBlocks(id);
+      setScreenId(nextScreenId ?? panel.screenIds[0] ?? null);
       setCleanTick((t) => t + 1);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreatePanel = async () => {
-    const newName = prompt("Nom del nou panell (per exemple: Panell Taller)");
-    if (!newName?.trim()) return;
+  /** Crea una còpia del contingut `fromId` (o un de buit) i l'assigna només a `target`. */
+  const copyToScreen = async (target: Screen, fromId: string | null) => {
+    const res = await fetch("/api/panels", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: target.name, copyFromId: fromId }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || "Error creant el contingut");
+    const assign = await fetch(`/api/panels/${data.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ screenIds: [target.id] }),
+    });
+    if (!assign.ok) throw new Error("Error assignant la pantalla");
+    return data.id as string;
+  };
+
+  const selectScreen = async (id: string) => {
+    const target = screens.find((sc) => sc.id === id);
+    if (!target) return;
+    const owner = panels.find((p) => p.screenIds.includes(id));
+    if (owner) {
+      await switchPanel(owner.id, id);
+      return;
+    }
+    // Una pantalla sense contingut: se'n crea un, en blanc o copiant el que tens obert.
     const copy = confirm(
-      "Vols copiar el contingut del panell actual?\n\nAcceptar: copia blocs, capçalera i aparença.\nCancel·lar: crea el panell buit."
+      `La pantalla «${target.name}» encara no té contingut.\n\nAcceptar: copia-hi el d'aquesta pantalla.\nCancel·lar: crea-la en blanc.`
     );
+    if (copy && dirty && !confirm("Es copiarà el contingut tal com està desat, sense els canvis d'ara. Continuar?")) {
+      return;
+    }
+    setCopying(true);
     try {
-      const res = await fetch("/api/panels", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newName.trim(), copyFromId: copy ? panelId : null }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Error creant el panell");
-      await loadData(data.id);
+      const newId = await copyToScreen(target, copy ? panelId : null);
+      await loadData(newId, target.id);
     } catch (error: any) {
-      alert(error?.message || "Error creant el panell");
+      alert(error?.message || "Error creant el contingut");
+    } finally {
+      setCopying(false);
     }
   };
 
-  const handleDuplicatePanel = async () => {
-    if (!panelId) return;
-    if (dirty && !confirm("Es duplicarà el panell tal com està desat, sense els canvis d'ara. Continuar?")) {
+  /** Copia el contingut d'aquesta pantalla a una altra, que passa a tenir-ne una còpia pròpia. */
+  const handleCopyTo = async (targetId: string) => {
+    const target = screens.find((sc) => sc.id === targetId);
+    if (!target || !panelId) return;
+    if (dirty) {
+      alert("Desa primer els canvis: es copia el contingut tal com està desat.");
       return;
     }
-    setDuplicating(true);
+    const owner = panels.find((p) => p.screenIds.includes(targetId));
+    const warn = owner
+      ? `\n\nEl que mostra ara «${target.name}» deixarà de sortir-hi (no s'esborra: queda a «Continguts sense pantalla»).`
+      : "";
+    if (!confirm(`Copiar el contingut d'aquesta pantalla a «${target.name}»? Després cada una es pot editar per separat.${warn}`)) {
+      return;
+    }
+    setCopying(true);
     try {
-      const res = await fetch("/api/panels", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: `${name} (còpia)`, copyFromId: panelId }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Error duplicant el panell");
-      await loadData(data.id);
+      const newId = await copyToScreen(target, panelId);
+      await loadData(newId, target.id);
     } catch (error: any) {
-      alert(error?.message || "Error duplicant el panell");
+      alert(error?.message || "Error copiant el contingut");
     } finally {
-      setDuplicating(false);
+      setCopying(false);
+    }
+  };
+
+  /** Deixa aquesta pantalla amb una còpia pròpia del contingut que ara comparteix. */
+  const handleMakeIndependent = async () => {
+    const current = screens.find((sc) => sc.id === screenId);
+    if (!current || !panelId) return;
+    if (dirty) {
+      alert("Desa primer els canvis, i després separa la pantalla.");
+      return;
+    }
+    setCopying(true);
+    try {
+      const newId = await copyToScreen(current, panelId);
+      await loadData(newId, current.id);
+    } catch (error: any) {
+      alert(error?.message || "Error separant la pantalla");
+    } finally {
+      setCopying(false);
     }
   };
 
   const handleDeletePanel = async () => {
     if (!panelId) return;
-    if (!confirm(`Segur que vols esborrar el panell "${name}"? No es pot desfer.`)) return;
+    const where = screens.filter((sc) => screenIds.includes(sc.id)).map((sc) => sc.name);
+    const msg = where.length
+      ? `Segur que vols esborrar aquest contingut? Deixarà de sortir a: ${where.join(", ")}. No es pot desfer.`
+      : `Segur que vols esborrar el contingut "${name}"? No es pot desfer.`;
+    if (!confirm(msg)) return;
     try {
       const res = await fetch(`/api/panels/${panelId}`, { method: "DELETE" });
       const data = await res.json().catch(() => ({}));
@@ -392,6 +456,7 @@ export default function PanelEditorPage() {
               typeText: b.typeText,
               imageUrl: b.imageUrl,
               videoUrl: b.videoUrl,
+              fullBleed: b.fullBleed,
               startsAt: b.startsAt,
               endsAt: b.endsAt,
             }),
@@ -471,15 +536,17 @@ export default function PanelEditorPage() {
       typeText: b.typeText,
       imageUrl: b.imageUrl,
       videoUrl: b.videoUrl,
+      fullBleed: b.fullBleed,
     }));
 
   // Which blocks the panel will actually draw, in the same terms PanelDisplay
   // uses, so the editor's size advice matches what appears on screen.
-  const isShown = (b: EditableBlock) => b.enabled && !!(b.title || b.text || b.date || b.typeText);
+  const isShown = (b: EditableBlock) => isBlockShown(b);
   const byOrder = (a: EditableBlock, b: EditableBlock) => a.order - b.order;
   const shownBlocks = blocks.filter(isShown).sort(byOrder);
   // For a block that is not shown yet, advise as if it were switched on.
   const slotFor = (block: EditableBlock) => {
+    if (block.fullBleed) return IMAGE_SLOTS.POSTER;
     const list = shownBlocks.includes(block)
       ? shownBlocks
       : [...shownBlocks, block].sort(byOrder);
@@ -533,7 +600,16 @@ export default function PanelEditorPage() {
   const appearanceSummary = `${
     inheritsTheme ? "Color del centre" : THEME_PRESETS.find((p) => p.id === presetId)?.label ?? "Color propi"
   } · lletra ${fontLabel.toLowerCase()}`;
-  const blocksSummary = `${shownBlocks.length} ${shownBlocks.length === 1 ? "actiu" : "actius"} · ${layoutLabel(shownBlocks.length)}`;
+  const posterBlock = shownBlocks.find(isPosterBlock);
+  const blocksSummary = posterBlock
+    ? `Cartell a pantalla completa (${posterBlock.title || "sense títol"})`
+    : `${shownBlocks.length} ${shownBlocks.length === 1 ? "actiu" : "actius"} · ${layoutLabel(shownBlocks.length)}`;
+  const orphanPanels = panels.filter((p) => p.screenIds.length === 0);
+  const currentScreen = screens.find((sc) => sc.id === screenId) ?? null;
+  const sharedWith = screens.filter((sc) => screenIds.includes(sc.id) && sc.id !== screenId);
+  const otherScreens = screens.filter((sc) => sc.id !== screenId);
+  const selectValue =
+    currentScreen && screenIds.includes(currentScreen.id) ? `s:${currentScreen.id}` : `p:${panelId}`;
   const screensSummary = assignedScreens.length
     ? assignedScreens.map((s) => s.name).join(" · ")
     : "Cap pantalla";
@@ -549,37 +625,64 @@ export default function PanelEditorPage() {
     <div className="p-6">
       <div className="flex items-center justify-between mb-4 gap-4 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
+          <label htmlFor="tria-pantalla" className="text-xs font-bold text-gray-500">
+            Pantalla
+          </label>
           <select
-            value={panelId || ""}
-            onChange={(e) => switchPanel(e.target.value)}
+            id="tria-pantalla"
+            value={selectValue}
+            onChange={(e) => {
+              const kind = e.target.value.slice(0, 1);
+              const id = e.target.value.slice(2);
+              if (kind === "s") selectScreen(id);
+              else switchPanel(id, null);
+            }}
+            disabled={copying}
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white font-medium"
           >
-            {panels.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
+            <optgroup label="Pantalles">
+              {screens.map((sc) => (
+                <option key={sc.id} value={`s:${sc.id}`}>
+                  {sc.name}
+                  {sc.location ? ` · ${sc.location}` : ""}
+                  {panels.some((p) => p.screenIds.includes(sc.id)) ? "" : " (sense contingut)"}
+                </option>
+              ))}
+            </optgroup>
+            {(orphanPanels.length > 0 || !currentScreen) && (
+              <optgroup label="Continguts sense pantalla">
+                {panels
+                  .filter((p) => p.screenIds.length === 0 || (p.id === panelId && !currentScreen))
+                  .map((p) => (
+                    <option key={p.id} value={`p:${p.id}`}>
+                      {p.name}
+                    </option>
+                  ))}
+              </optgroup>
+            )}
           </select>
-          <button
-            onClick={handleCreatePanel}
-            className="px-3 py-2 rounded-lg border border-gray-300 text-gray-600 text-sm"
-            title="Crear un panell nou"
-          >
-            + Nou
-          </button>
-          <button
-            onClick={handleDuplicatePanel}
-            disabled={duplicating}
-            className="px-3 py-2 rounded-lg border border-gray-300 text-gray-600 text-sm disabled:opacity-60"
-            title="Crea un panell nou a partir d'aquest"
-          >
-            {duplicating ? "Duplicant…" : "Duplica"}
-          </button>
+          {otherScreens.length > 0 && (
+            <select
+              aria-label="Copia a una altra pantalla"
+              value=""
+              onChange={(e) => e.target.value && handleCopyTo(e.target.value)}
+              disabled={copying}
+              className="px-3 py-2 rounded-lg border border-gray-300 text-gray-600 text-sm bg-white"
+              title="Fa una còpia d'aquest contingut per a una altra pantalla, que després s'edita per separat"
+            >
+              <option value="">{copying ? "Copiant…" : "Copia a una altra pantalla…"}</option>
+              {otherScreens.map((sc) => (
+                <option key={sc.id} value={sc.id}>
+                  {sc.name}
+                </option>
+              ))}
+            </select>
+          )}
           {panels.length > 1 && (
             <button
               onClick={handleDeletePanel}
               className="px-3 py-2 rounded-lg border border-red-200 text-red-600 text-sm"
-              title="Esborrar aquest panell"
+              title="Esborra aquest contingut"
             >
               Esborra
             </button>
@@ -627,6 +730,31 @@ export default function PanelEditorPage() {
           </button>
         </div>
       </div>
+
+      {sharedWith.length > 0 && (
+        <div className="mb-4 flex items-center justify-between gap-3 flex-wrap rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <span>
+            Aquesta pantalla comparteix el contingut amb{" "}
+            <strong>{sharedWith.map((sc) => sc.name).join(", ")}</strong>: el que canviïs aquí es veurà
+            a totes.
+          </span>
+          {currentScreen && (
+            <button
+              type="button"
+              onClick={handleMakeIndependent}
+              disabled={copying}
+              className="px-3 py-1.5 rounded-lg border border-amber-300 bg-white text-amber-900 font-medium disabled:opacity-60"
+            >
+              Fes-la independent
+            </button>
+          )}
+        </div>
+      )}
+      {!currentScreen && (
+        <div className="mb-4 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-600">
+          Aquest contingut no surt a cap pantalla. Tria on es mostra al mòdul «Es mostra a».
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_440px] gap-6 items-start">
         <div className="space-y-3 min-w-0">
@@ -841,14 +969,15 @@ export default function PanelEditorPage() {
           </Module>
 
           <Module
-            title="Pantalles"
+            title="Es mostra a"
             summary={screensSummary}
             open={openModules.pantalles}
             onToggle={() => toggleModule("pantalles")}
           >
             <p className="text-xs text-gray-400 mb-3">
-              Cada pantalla mostra un sol panell: si la marques aquí, deixa de mostrar el que tenia.
-              Les pantalles es refresquen soles cada pocs minuts.
+              Marca una altra pantalla per mostrar-hi exactament el mateix: compartiran aquest contingut
+              i un canvi es veurà a totes. Si en vols una còpia per editar-la per separat, fes servir
+              «Copia a una altra pantalla». Les pantalles es refresquen soles cada pocs minuts.
             </p>
             <div className="flex flex-wrap gap-2" role="group" aria-label="Pantalles que mostren aquest panell">
               {screens.map((screen) => {
