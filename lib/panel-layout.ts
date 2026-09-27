@@ -60,12 +60,14 @@ const SMALL: ImageSlot = {
  * Imatge a pantalla completa: ocupa tot el que hi ha sota la capçalera. La
  * capçalera canvia d'alçada segons el que mostri (rellotge, sostenibilitat,
  * frase), així que la imatge es retalla pel centre; aquesta mida és la d'una
- * capçalera normal. No hi ha plantilla de Canva feta per a aquesta mida.
+ * capçalera normal. La plantilla de Canva té aquesta mida exacta.
  */
 const POSTER: ImageSlot = {
   width: 1080,
   height: 1600,
   ratio: "2:3",
+  canvaUrl: "https://canva.link/m0t1l7ckt9br2l6",
+  canvaTitle: "Cartell a pantalla completa",
 };
 
 /** Every distinct slot, for the help page. */
