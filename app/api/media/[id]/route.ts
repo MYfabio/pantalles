@@ -25,6 +25,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const total = bytes.length;
     const headers: Record<string, string> = {
       "Content-Type": media.mime,
+      "X-Content-Type-Options": "nosniff",
+      "Content-Security-Policy": "default-src \'none\'; sandbox",
       "Accept-Ranges": "bytes",
       "Cache-Control": "public, max-age=31536000, immutable",
     };

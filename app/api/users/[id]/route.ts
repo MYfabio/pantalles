@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/admin";
 import bcrypt from "bcryptjs";
 
 const userSelect = {
@@ -14,11 +13,11 @@ const userSelect = {
   updatedAt: true,
 };
 
+const ROLS = ["ADMIN", "EDITOR"];
+
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: "No autoritzat" }, { status: 401 });
-  }
+  const admin = await requireAdmin();
+  if (admin instanceof NextResponse) return admin;
 
   try {
     const user = await prisma.user.findUnique({
@@ -35,12 +34,17 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: "No autoritzat" }, { status: 401 });
-  }
+  const admin = await requireAdmin();
+  if (admin instanceof NextResponse) return admin;
 
   const { name, email, password, role, active } = await req.json();
+  if (role !== undefined && !ROLS.includes(role)) {
+    return NextResponse.json({ error: "Rol no vàlid" }, { status: 400 });
+  }
+  // Un admin no es pot treure el rol ni desactivar-se: es quedaria el centre sense ningú que gestioni.
+  if (params.id === admin.id && ((role !== undefined && role !== "ADMIN") || active === false)) {
+    return NextResponse.json({ error: "No et pots treure el rol d'administrador ni desactivar-te" }, { status: 400 });
+  }
 
   try {
     const user = await prisma.user.update({
@@ -62,9 +66,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: "No autoritzat" }, { status: 401 });
+  const admin = await requireAdmin();
+  if (admin instanceof NextResponse) return admin;
+  if (params.id === admin.id) {
+    return NextResponse.json({ error: "No et pots eliminar a tu mateix" }, { status: 400 });
   }
 
   try {

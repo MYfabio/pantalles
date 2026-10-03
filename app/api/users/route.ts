@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: "No autoritzat" }, { status: 401 });
-  }
+  const admin = await requireAdmin();
+  if (admin instanceof NextResponse) return admin;
 
   try {
     const users = await prisma.user.findMany({
@@ -30,13 +27,14 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: "No autoritzat" }, { status: 401 });
-  }
+  const admin = await requireAdmin();
+  if (admin instanceof NextResponse) return admin;
 
   const { name, email, password, role } = await req.json();
 
+  if (role !== undefined && !["ADMIN", "EDITOR"].includes(role)) {
+    return NextResponse.json({ error: "Rol no vàlid" }, { status: 400 });
+  }
   if (!name || !email || !password) {
     return NextResponse.json({ error: "Falten camps obligatoris" }, { status: 400 });
   }

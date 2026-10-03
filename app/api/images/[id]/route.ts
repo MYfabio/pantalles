@@ -19,6 +19,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     return new NextResponse(Buffer.from(image.bytes), {
       headers: {
         "Content-Type": image.mime,
+        "X-Content-Type-Options": "nosniff",
+        "Content-Security-Policy": "default-src \'none\'; sandbox",
         "Content-Length": String(image.size),
         "Cache-Control": "public, max-age=31536000, immutable",
       },
