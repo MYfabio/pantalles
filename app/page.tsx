@@ -401,6 +401,9 @@ export default function LandingPage() {
             <a href={ALTA_FORM_URL} target="_blank" rel="noreferrer" className="hover:text-white">
               Alta de centre
             </a>
+            <a href="https://www.aulaia.cat" className="hover:text-white">
+              www.aulaia.cat
+            </a>
             <Link href="/dashboard" className="hover:text-white">
               Accés al gestor
             </Link>
