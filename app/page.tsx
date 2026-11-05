@@ -174,6 +174,30 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ---------- Problema i perfil ---------- */}
+      <section className="px-5 py-16 sm:py-20">
+        <div className="mx-auto grid max-w-6xl gap-10 md:grid-cols-2">
+          <div>
+            <h2 className="text-3xl font-bold" style={{ color: NAVY }}>
+              Quin problema resol?
+            </h2>
+            <p className="mt-3 text-slate-600">
+              Els avisos del centre es perden entre paper, correus i pantalles que ningú actualitza.
+              Qualsevol monitor es converteix en un tauler digital que s&apos;actualitza sol.
+            </p>
+          </div>
+          <div>
+            <h2 className="text-3xl font-bold" style={{ color: NAVY }}>
+              Per a quina etapa o perfil serveix?
+            </h2>
+            <p className="mt-3 text-slate-600">
+              Centres de Primària, ESO, Batxillerat i Cicles Formatius. Secretaria, departaments,
+              direcció i coordinació TAC.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* ---------- Per a qui ---------- */}
       <section className="px-5 py-16 sm:py-20">
         <div className="mx-auto max-w-6xl">
