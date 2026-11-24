@@ -1,8 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import PanelFullscreenFrame from "@/components/PanelFullscreenFrame";
 import { resolveTheme } from "@/lib/panel-theme";
+import { METADADES_PRIVADA } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+// Pantalla d'un centre: fora dels cercadors.
+export const metadata = METADADES_PRIVADA;
 
 function Notice({ children }: { children: React.ReactNode }) {
   return (

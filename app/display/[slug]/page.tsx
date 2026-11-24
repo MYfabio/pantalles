@@ -1,7 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import GeneratedScreenFrame from "@/components/GeneratedScreenFrame";
+import { METADADES_PRIVADA } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+// Pantalla d'un centre: fora dels cercadors.
+export const metadata = METADADES_PRIVADA;
 
 export default async function DisplayPage({ params }: { params: { slug: string } }) {
   const screen = await prisma.screen.findUnique({ where: { slug: params.slug }, include: { contents: { include: { content: true } } } });

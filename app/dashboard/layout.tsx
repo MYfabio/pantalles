@@ -2,6 +2,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
+import { METADADES_PRIVADA } from "@/lib/seo";
+
+// El gestor no s'ha d'indexar.
+export const metadata = METADADES_PRIVADA;
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);

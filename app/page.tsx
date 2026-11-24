@@ -8,15 +8,111 @@ import {
   StepBadge,
 } from "@/components/landing/Illustrations";
 import { ALTA_FORM_URL, ANDROID_APK_URL } from "@/lib/landing-config";
+import { NOM_SITE, URL_PUBLICA, jsonLdSegur, metadadesPublica } from "@/lib/seo";
 
-export const metadata = {
-  title: "Kiosko escolar — Cartelleria digital per a centres educatius",
-  description:
+export const metadata = metadadesPublica({
+  titol: "Kiosko escolar — Cartelleria digital per a centres educatius",
+  descripcio:
     "Gestiona el que es veu a les pantalles del centre des del navegador: avisos de secretaria, activitats dels departaments i projectes de centre. Alta gratuïta per a escoles.",
-};
+  cami: "/",
+});
 
 const NAVY = "#1a3a5c";
 const ACCENT = "#a00842";
+
+// Respostes curtes a les preguntes que es fa qui arriba a la portada. Es mostren tal qual a la
+// pàgina i les mateixes alimenten el FAQPage del JSON-LD: cap pregunta que no es vegi.
+const QUE_ES = {
+  pregunta: "Què és Kiosko?",
+  resposta:
+    "Kiosko és un gestor de cartelleria digital per a centres educatius. Converteix qualsevol monitor o televisor amb Android en un tauler d'anuncis que s'actualitza sol. Els panells, amb capçalera i blocs de títol, text i imatge, s'editen des del navegador, i cada bloc pot tenir data d'inici i de fi de publicació.",
+};
+
+const PER_A_QUI = {
+  pregunta: "Per a qui és?",
+  resposta:
+    "És per a centres de Primària, ESO, Batxillerat i Cicles Formatius. Hi publiquen secretaria, els departaments, la direcció i la coordinació TAC, cadascú amb el seu usuari del centre. Publicar un avís és qüestió d'un minut des de qualsevol ordinador del centre, i les pantalles del vestíbul, el taller o la sala de professorat el mostren soles.",
+};
+
+const FAQ = [
+  {
+    pregunta: "Cal comprar maquinari especial?",
+    resposta:
+      "No. Serveix qualsevol monitor o televisor amb Android 8.0 o superior. Si el que tens no en porta, un reproductor Android connectat per HDMI ja fa la feina.",
+  },
+  {
+    pregunta: "Cal anar a la pantalla per actualitzar-la?",
+    resposta:
+      "No. El reproductor consulta el servidor cada pocs minuts i la pantalla s'actualitza sola. Un cop instal·lada, no cal tornar-hi.",
+  },
+  {
+    pregunta: "Es pot mostrar una altra web a la mateixa pantalla?",
+    resposta:
+      "Sí. Cada pantalla pot alternar el panell del centre amb qualsevol altra web, i el temps de cadascuna es canvia des del navegador.",
+  },
+  {
+    pregunta: "Té cost?",
+    resposta: "No. Kiosko és gratuït per a centres educatius.",
+  },
+  {
+    pregunta: "Com dono d'alta el meu centre?",
+    resposta:
+      "Omple el formulari d'alta d'Aulaia i ens posem en contacte amb el centre per obrir-vos el compte.",
+  },
+];
+
+/** Dades estructurades de la portada: el web, l'aplicació i les preguntes visibles. */
+function dadesEstructurades() {
+  const url = `${URL_PUBLICA}/`;
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": `${URL_PUBLICA}/#web`,
+        url,
+        name: NOM_SITE,
+        inLanguage: "ca",
+        publisher: { "@id": "https://www.aulaia.cat/#organitzacio" },
+      },
+      {
+        "@type": "WebApplication",
+        "@id": `${URL_PUBLICA}/#app`,
+        name: NOM_SITE,
+        url,
+        description: QUE_ES.resposta,
+        applicationCategory: "EducationalApplication",
+        operatingSystem: "Web",
+        inLanguage: "ca",
+        educationalLevel: ["Educació Primària", "ESO", "Batxillerat", "Cicles Formatius"],
+        audience: {
+          "@type": "EducationalAudience",
+          educationalRole: "teacher",
+          audienceType: "Centres educatius: secretaria, departaments, direcció i coordinació TAC",
+        },
+        isAccessibleForFree: true,
+        image: `${URL_PUBLICA}/kiosko-pati.jpg`,
+        provider: {
+          "@type": "Organization",
+          "@id": "https://www.aulaia.cat/#organitzacio",
+          name: "aulaia.cat",
+          url: "https://www.aulaia.cat",
+        },
+      },
+      {
+        "@type": "FAQPage",
+        "@id": `${url}#preguntes`,
+        url,
+        inLanguage: "ca",
+        mainEntity: [QUE_ES, PER_A_QUI, ...FAQ].map(({ pregunta, resposta }) => ({
+          "@type": "Question",
+          name: pregunta,
+          acceptedAnswer: { "@type": "Answer", text: resposta },
+        })),
+      },
+    ],
+  };
+}
 
 const PUBLICS = [
   {
@@ -100,6 +196,10 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-white text-slate-800">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdSegur(dadesEstructurades()) }}
+      />
       {/* ---------- Capçalera ---------- */}
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3">
@@ -123,6 +223,7 @@ export default function LandingPage() {
         </div>
       </header>
 
+      <main>
       {/* ---------- Portada ---------- */}
       <section className="px-5 py-16 sm:py-24" style={{ background: NAVY }}>
         <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1.15fr_1fr]">
@@ -174,9 +275,15 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ---------- Problema i perfil ---------- */}
+      {/* ---------- Què és, quin problema resol i per a qui és ---------- */}
       <section className="px-5 py-16 sm:py-20">
-        <div className="mx-auto grid max-w-6xl gap-10 md:grid-cols-2">
+        <div className="mx-auto grid max-w-6xl gap-10 md:grid-cols-3">
+          <div>
+            <h2 className="text-3xl font-bold" style={{ color: NAVY }}>
+              {QUE_ES.pregunta}
+            </h2>
+            <p className="mt-3 text-slate-600">{QUE_ES.resposta}</p>
+          </div>
           <div>
             <h2 className="text-3xl font-bold" style={{ color: NAVY }}>
               Quin problema resol?
@@ -188,12 +295,9 @@ export default function LandingPage() {
           </div>
           <div>
             <h2 className="text-3xl font-bold" style={{ color: NAVY }}>
-              Per a quina etapa o perfil serveix?
+              {PER_A_QUI.pregunta}
             </h2>
-            <p className="mt-3 text-slate-600">
-              Centres de Primària, ESO, Batxillerat i Cicles Formatius. Secretaria, departaments,
-              direcció i coordinació TAC.
-            </p>
+            <p className="mt-3 text-slate-600">{PER_A_QUI.resposta}</p>
           </div>
         </div>
       </section>
@@ -392,6 +496,25 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ---------- Preguntes freqüents ---------- */}
+      <section className="bg-slate-50 px-5 py-16 sm:py-20">
+        <div className="mx-auto max-w-4xl">
+          <h2 className="text-3xl font-bold" style={{ color: NAVY }}>
+            Preguntes freqüents
+          </h2>
+          <div className="mt-8 space-y-4">
+            {FAQ.map((f) => (
+              <div key={f.pregunta} className="rounded-2xl bg-white p-6 shadow-sm">
+                <h3 className="text-base font-bold" style={{ color: NAVY }}>
+                  {f.pregunta}
+                </h3>
+                <p className="mt-2 text-slate-600">{f.resposta}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ---------- Alta ---------- */}
       <section className="border-t border-slate-200 px-5 py-16 sm:py-20">
         <div className="mx-auto max-w-3xl text-center">
@@ -414,6 +537,7 @@ export default function LandingPage() {
           </a>
         </div>
       </section>
+      </main>
 
       {/* ---------- Peu ---------- */}
       <footer className="px-5 py-10" style={{ background: NAVY }}>
