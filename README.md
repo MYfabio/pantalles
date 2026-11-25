@@ -2,24 +2,30 @@
 
 App per gestionar contingut a pantalles digitals.
 
-## Panells
+## Contingut per pantalla
 
-Un **panell** és una disposició completa de pantalla: la capçalera i els seus
-blocs. Cada pantalla apunta a un panell, de manera que diverses pantalles poden
-compartir-ne un o cadascuna mostrar-ne un de diferent. Es gestionen a
-`Tauler → Panells`, amb selector, creació (buida o copiant l'actual) i vista
-prèvia a mida real.
+Cada pantalla té el seu contingut: la capçalera i els seus blocs. **No es
+comparteix entre pantalles.** S'edita entrant a `Tauler → Pantalles` i triant-ne
+una; per reaprofitar el d'una altra hi ha «Carrega el que hi ha a una altra
+pantalla», que en posa una còpia i guarda el que hi havia perquè es pugui
+desfer (`lib/screen-panel.ts`). A partir d'aquí cada pantalla s'edita per
+separat.
+
+Abans un mateix contingut es podia mostrar a diverses pantalles, i un canvi en
+una es veia a les altres sense voler. Les pantalles que encara en compartien un
+reben la seva còpia el primer cop que s'obren a l'editor.
 
 Cada bloc admet una **finestra de publicació** (`des de` / `fins a`): fora
 d'aquestes dates desapareix sol de les pantalles, sense haver-hi de tornar.
 
-## Editor de panells
+## Editor d'una pantalla
 
-L'editor (`/dashboard/panel`) té quatre mòduls plegables a l'esquerra (Capçalera,
-Aparença, Blocs, Pantalles) i la previsualització fixa a la dreta. Dels blocs
-només s'obre el que s'edita; la resta es veuen com una línia amb el títol, el
-tipus, les dates de publicació i el mitjà. La barra de dalt diu si hi ha canvis
-sense desar, i «Duplica» crea un panell nou a partir de l'actual.
+L'editor (`/dashboard/screens/<id>/edit`) té quatre mòduls plegables a
+l'esquerra (Capçalera, Aparença, Blocs, Dades de la pantalla) i la
+previsualització fixa a la dreta. Dels blocs només s'obre el que s'edita; la
+resta es veuen com una línia amb el títol, el tipus, les dates de publicació i
+el mitjà. La barra de dalt diu si hi ha canvis sense desar. Les dades de la
+pantalla (nom, ubicació, rotació de webs) es desen amb el seu propi botó.
 
 ## Aparença per panell
 

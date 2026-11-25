@@ -29,22 +29,34 @@ export default function ScreensPage() {
     fetchScreens();
   }, []);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Estàs segur?")) return;
+  const handleDelete = async (screen: Screen) => {
+    if (
+      !confirm(
+        `Eliminar la pantalla «${screen.name}»?
+
+S'esborrarà també el seu contingut. No es pot desfer.`
+      )
+    ) {
+      return;
+    }
     try {
-      await fetch(`/api/screens/${id}`, { method: "DELETE" });
-      setScreens(screens.filter((s) => s.id !== id));
+      const res = await fetch(`/api/screens/${screen.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      setScreens(screens.filter((s) => s.id !== screen.id));
     } catch (error) {
-      alert("Error eliminant");
+      alert("Error eliminant la pantalla");
     }
   };
 
-  if (loading) return <div className="p-6">Cargando...</div>;
+  if (loading) return <div className="p-6">Carregant...</div>;
 
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-lg font-medium">Pantalles</h1>
+        <div>
+          <h1 className="text-lg font-medium">Pantalles</h1>
+          <p className="text-sm text-gray-500">Tria una pantalla per editar el que s&apos;hi veu.</p>
+        </div>
         <Link
           href="/dashboard/screens/new"
           className="px-4 py-2 rounded-lg text-white font-medium"
@@ -68,7 +80,15 @@ export default function ScreensPage() {
           <tbody>
             {screens.map((screen) => (
               <tr key={screen.id} className="border-t">
-                <td className="px-6 py-3">{screen.name}</td>
+                <td className="px-6 py-3">
+                  <Link
+                    href={`/dashboard/screens/${screen.id}/edit`}
+                    className="font-medium hover:underline"
+                    style={{ color: "#1a3a5c" }}
+                  >
+                    {screen.name}
+                  </Link>
+                </td>
                 <td className="px-6 py-3 text-sm text-gray-600">/{screen.slug}</td>
                 <td className="px-6 py-3 text-sm text-gray-600">{screen.location || "-"}</td>
                 <td className="px-6 py-3">
@@ -90,7 +110,7 @@ export default function ScreensPage() {
                     Editar
                   </Link>
                   <button
-                    onClick={() => handleDelete(screen.id)}
+                    onClick={() => handleDelete(screen)}
                     className="text-red-600 hover:underline"
                   >
                     Eliminar

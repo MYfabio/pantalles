@@ -75,7 +75,16 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   }
 
   try {
+    // El contingut és de la pantalla: se'n va amb ella, i la còpia de reserva també.
+    const screen = await prisma.screen.findUnique({ where: { id: params.id } });
     await prisma.screen.delete({ where: { id: params.id } });
+    for (const panelId of [screen?.panelId, screen?.previousPanelId]) {
+      if (!panelId) continue;
+      const stillUsed = await prisma.screen.count({
+        where: { OR: [{ panelId }, { previousPanelId: panelId }] },
+      });
+      if (stillUsed === 0) await prisma.panel.deleteMany({ where: { id: panelId } });
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: "Error eliminant pantalla" }, { status: 500 });

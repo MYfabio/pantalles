@@ -8,7 +8,9 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   const screens = await prisma.screen.findMany();
-  const blocks = await prisma.panelBlock.findMany({ orderBy: { order: "asc" } });
+  // Nomes els blocs del contingut que una pantalla mostra ara; les copies de reserva no compten.
+  const panelIds = screens.map((s) => s.panelId).filter((id): id is string => Boolean(id));
+  const blocks = await prisma.panelBlock.findMany({ where: { panelId: { in: panelIds } } });
   const activeBlocks = blocks.filter((b) => b.enabled).length;
   const screensWithPanel = screens.filter((s) => s.panelId).length;
 
@@ -16,7 +18,7 @@ export default async function DashboardPage() {
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-lg font-medium text-gray-900">Tauler principal</h1>
-        <Link href="/dashboard/panel" className="px-4 py-2 rounded-lg text-sm text-white font-medium" style={{ background: "#1a3a5c" }}>Panells</Link>
+        <Link href="/dashboard/screens" className="px-4 py-2 rounded-lg text-sm text-white font-medium" style={{ background: "#1a3a5c" }}>Pantalles</Link>
       </div>
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-xl border p-4">
@@ -24,11 +26,11 @@ export default async function DashboardPage() {
           <div className="text-2xl font-bold mt-1">{screens.length}</div>
         </div>
         <div className="bg-white rounded-xl border p-4">
-          <div className="text-xs text-gray-500">Blocs actius del panell</div>
+          <div className="text-xs text-gray-500">Blocs actius a les pantalles</div>
           <div className="text-2xl font-bold mt-1">{activeBlocks} / {blocks.length}</div>
         </div>
         <div className="bg-white rounded-xl border p-4">
-          <div className="text-xs text-gray-500">Pantalles amb panell actiu</div>
+          <div className="text-xs text-gray-500">Pantalles amb contingut</div>
           <div className="text-2xl font-bold mt-1">{screensWithPanel}</div>
         </div>
       </div>

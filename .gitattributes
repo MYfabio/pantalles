@@ -1,0 +1,3 @@
+# Les migracions es comproven per suma de control: sempre amb salts de linia LF.
+*.sql text eol=lf
+prisma/schema.prisma text eol=lf

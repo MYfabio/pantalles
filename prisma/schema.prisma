@@ -28,9 +28,12 @@ model Screen {
   createdAt  DateTime        @default(now())
   updatedAt  DateTime        @updatedAt
   contents   ContentScreen[]
-  // Which panel this screen displays. Null means the screen shows no panel.
+  // El contingut d'aquesta pantalla. Cada pantalla te el seu (lib/screen-panel.ts
+  // el crea o el separa en obrir l'editor); nul vol dir que encara no s'ha editat.
   panelId    String?
   panel      Panel?          @relation(fields: [panelId], references: [id], onDelete: SetNull)
+  // El contingut que tenia abans de "carregar el d'una altra pantalla", per desfer-ho.
+  previousPanelId String?
   urls       ScreenUrl[]
 }
 
@@ -77,8 +80,7 @@ model ContentScreen {
 }
 
 // A panel is one full-screen layout: its header settings plus its own blocks.
-// Screens point at a panel, so several screens can share one panel or each
-// show a different one.
+// Each screen owns exactly one; content is copied between screens, never shared.
 model Panel {
   id                     String       @id @default(cuid())
   name                   String

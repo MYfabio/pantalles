@@ -7,7 +7,6 @@ import { KioskoMark } from "@/components/KioskoLogo";
 
 const links = [
   { href: "/dashboard", label: "Tauler", icon: "📊" },
-  { href: "/dashboard/panel", label: "Panells", icon: "🗂️" },
   { href: "/dashboard/screens", label: "Pantalles", icon: "🖥️" },
   { href: "/dashboard/users", label: "Usuaris", icon: "👥" },
   { href: "/dashboard/settings", label: "Configuracio", icon: "⚙️" },
