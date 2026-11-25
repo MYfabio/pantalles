@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { dominiDe, enviarAvis, rolComu } from "@/lib/avisos";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
 import bcrypt from "bcryptjs";
@@ -47,6 +48,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   try {
+    const abans = await prisma.user.findUnique({ where: { id: params.id }, select: { email: true, role: true, active: true } });
     const user = await prisma.user.update({
       where: { id: params.id },
       data: {
@@ -59,6 +61,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       },
       select: userSelect,
     });
+    if (abans) {
+      const centre = dominiDe(user.email);
+      if (rolComu(abans.role) !== rolComu(user.role)) void enviarAvis({ tipus: "rol.canvi", centre, datos: { abans: rolComu(abans.role), ara: rolComu(user.role) } });
+      if (abans.active && !user.active) void enviarAvis({ tipus: "baixa", centre, datos: { rol: rolComu(user.role) } });
+      if (!abans.active && user.active) void enviarAvis({ tipus: "alta.validada", centre, datos: { rol: rolComu(user.role) } });
+    }
     return NextResponse.json(user);
   } catch (error) {
     return NextResponse.json({ error: "Error actualitzant usuari" }, { status: 500 });
@@ -73,7 +81,8 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   }
 
   try {
-    await prisma.user.delete({ where: { id: params.id } });
+    const esborrat = await prisma.user.delete({ where: { id: params.id }, select: { email: true, role: true } });
+    void enviarAvis({ tipus: "baixa", centre: dominiDe(esborrat.email), datos: { rol: rolComu(esborrat.role) } });
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: "Error eliminant usuari" }, { status: 500 });

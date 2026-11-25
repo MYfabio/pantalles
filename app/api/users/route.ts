@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { dominiDe, enviarAvis, rolComu } from "@/lib/avisos";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
@@ -58,6 +59,8 @@ export async function POST(req: NextRequest) {
         updatedAt: true,
       },
     });
+    // Avís a aulaia.cat: domini del correu i rol comú, mai el correu ni el nom.
+    void enviarAvis({ tipus: "alta.validada", centre: dominiDe(email), datos: { rol: rolComu(user.role) } });
     return NextResponse.json(user);
   } catch (error) {
     return NextResponse.json({ error: "Error creant usuari" }, { status: 500 });
