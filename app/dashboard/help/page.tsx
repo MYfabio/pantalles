@@ -192,68 +192,24 @@ export default function HelpPage() {
       </div>
 
       <h2 className="text-base font-medium mt-8 mb-1" style={{ color: "#a00842" }}>
-        Imatges: mides ideals
+        La imatge de cada pantalla
       </h2>
       <p className="text-sm text-gray-500 mb-3">
-        El panell reparteix l&apos;espai segons quants blocs hi ha actius, i cada forma de
-        tarjeta té un forat d&apos;imatge diferent. Si la imatge té exactament aquestes mides es
-        veu sencera; si té una altra forma, es retalla pel centre. L&apos;editor ho indica bloc a
-        bloc, però aquí tens la taula completa per preparar-les amb antelació. Cada plantilla de
-        Canva ja té el llenç d&apos;aquesta mida: només cal posar-hi la foto i descarregar.
+        Cada pantalla mostra la capçalera i, a sota, una sola imatge o un vídeo curt a pantalla
+        completa. La mida ideal és{" "}
+        <strong>
+          {IMAGE_SLOTS.POSTER.width} × {IMAGE_SLOTS.POSTER.height} px
+        </strong>{" "}
+        (vertical). Si té una altra forma, es retalla pel centre. Es pot pujar feta, fer-la amb la{" "}
+        {IMAGE_SLOTS.POSTER.canvaUrl ? (
+          <a href={IMAGE_SLOTS.POSTER.canvaUrl} target="_blank" rel="noreferrer" style={{ color: "#4a8abf" }}>
+            plantilla de Canva
+          </a>
+        ) : (
+          "plantilla de Canva"
+        )}{" "}
+        o descriure-la a l&apos;editor perquè la faci la IA, amb el text en català.
       </p>
-      <div className="overflow-x-auto rounded-xl border mb-3">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left text-xs text-gray-500">
-            <tr>
-              <th className="px-3 py-2">Blocs actius</th>
-              <th className="px-3 py-2">Tarjeta</th>
-              <th className="px-3 py-2">Mida</th>
-              <th className="px-3 py-2">Plantilla</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {[
-              { blocs: "1", card: "Pantalla completa", slot: IMAGE_SLOTS.FULL },
-              { blocs: "2", card: "Dues files, imatge a l'esquerra", slot: IMAGE_SLOTS.TALL },
-              { blocs: "3", card: "Tres files, imatge a l'esquerra", slot: IMAGE_SLOTS.SMALL },
-              { blocs: "4", card: "Quadrícula 2×2", slot: IMAGE_SLOTS.SMALL },
-              { blocs: "5", card: "General, ample a dalt", slot: IMAGE_SLOTS.WIDE },
-              { blocs: "Qualsevol", card: "Imatge a pantalla completa", slot: IMAGE_SLOTS.POSTER },
-            ].map((row, i) => (
-              <tr key={i}>
-                <td className="px-3 py-2 font-medium">{row.blocs}</td>
-                <td className="px-3 py-2">{row.card}</td>
-                <td className="px-3 py-2 font-mono text-xs">
-                  {row.slot.width} × {row.slot.height} px{" "}
-                  <span className="text-gray-400">({row.slot.ratio})</span>
-                </td>
-                <td className="px-3 py-2">
-                  {row.slot.canvaUrl ? (
-                    <a
-                      href={row.slot.canvaUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="font-medium"
-                      style={{ color: "#4a8abf" }}
-                    >
-                      {row.slot.canvaTitle} ↗
-                    </a>
-                  ) : (
-                    <span className="text-gray-400">Sense plantilla</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-            <tr>
-              <td className="px-3 py-2 font-medium">5</td>
-              <td className="px-3 py-2">Els quatre petits</td>
-              <td className="px-3 py-2 text-xs text-gray-400" colSpan={2}>
-                Sense imatge: la tarjeta és massa baixa perquè es vegi des del passadís.
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
     </div>
   );
 }

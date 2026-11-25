@@ -307,7 +307,7 @@ export default function PanelDisplay({
         }}
       >
         {active.length === 0 ? (
-          <div className="panel-empty">Activa o omple almenys un bloc.</div>
+          <div className="panel-empty" />
         ) : poster ? (
           poster.videoUrl ? (
             <CardVideo src={poster.videoUrl} poster={poster.imageUrl} className="panel-poster" />

@@ -3,22 +3,25 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { buildPosterPrompt, POSTER_RATIO } from "@/lib/poster-prompt";
+import { isHexColor } from "@/lib/panel-theme";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 // Newest first; the loop falls through to the next on a 404 (model not
-// available to this key), the same way improve-text does.
+// available to this key).
 const MODEL_CANDIDATES = ["gemini-2.5-flash-image", "gemini-2.0-flash-preview-image-generation"];
 
-// Shapes the image model accepts. Anything else falls back to the closest.
-const SUPPORTED_RATIOS = new Set(["1:1", "3:4", "4:3", "9:16", "16:9", "4:5", "5:4", "3:2", "2:3"]);
+// Generar una imatge triga uns 10-20 s; més de 50 vol dir que s'ha encallat.
+const TIMEOUT_MS = 50_000;
 
 /**
- * Generates an image for a panel block and stores it.
+ * Crea el cartel d'una pantalla amb Gemini a partir del que la persona vol
+ * comunicar, i el desa. El text del cartel va en català (lib/poster-prompt.ts).
  *
- * The prompt asks for a picture with no text in it: the block already carries
- * its title and text, and generated lettering is the one thing these models
- * still get visibly wrong on a screen read from three metres away.
+ * Si falla, l'editor sempre deixa pujar la imatge a mà: la IA és una drecera,
+ * no l'única via.
  */
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -26,24 +29,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No autoritzat" }, { status: 401 });
   }
 
-  const { title, text, ratio } = await req.json();
-  const subject = [title, text].filter((s) => typeof s === "string" && s.trim()).join(". ");
-  if (!subject) {
-    return NextResponse.json({ error: "Cal un títol o un text per generar la imatge" }, { status: 400 });
+  const { description, primary, dark } = await req.json();
+  if (typeof description !== "string" || !description.trim()) {
+    return NextResponse.json({ error: "Escriu què vols que surti al cartell" }, { status: 400 });
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ error: "GEMINI_API_KEY no configurada" }, { status: 500 });
+    return NextResponse.json({ error: "La IA no està configurada. Puja la imatge a mà." }, { status: 500 });
   }
 
-  const aspectRatio = SUPPORTED_RATIOS.has(ratio) ? ratio : "4:3";
-
-  const prompt = `Create a single image for a digital signage panel in a secondary school (institut) in Catalonia.
-Subject of the notice: "${subject}".
-Style: bright, friendly, modern flat illustration or clean photo-like scene; warm colours; clearly readable from a distance; suitable for teenagers and teachers.
-Aspect ratio ${aspectRatio}.
-Strict rules: NO text, NO letters, NO numbers, NO logos, NO watermarks anywhere in the image. No people's faces in close-up.`;
+  const prompt = buildPosterPrompt({
+    description,
+    primary: isHexColor(primary) ? primary : "#a00842",
+    dark: isHexColor(dark) ? dark : "#7a1230",
+  });
 
   const genAI = new GoogleGenerativeAI(apiKey);
   let lastError: any = null;
@@ -56,15 +56,15 @@ Strict rules: NO text, NO letters, NO numbers, NO logos, NO watermarks anywhere 
         // are passed through to the API as-is.
         generationConfig: {
           responseModalities: ["IMAGE", "TEXT"],
-          imageConfig: { aspectRatio },
+          imageConfig: { aspectRatio: POSTER_RATIO },
         } as any,
       });
-      const result = await model.generateContent(prompt);
+      const result = await model.generateContent(prompt, { timeout: TIMEOUT_MS });
 
       const parts: any[] = result.response.candidates?.[0]?.content?.parts ?? [];
       const inline = parts.find((p) => p.inlineData?.data)?.inlineData;
       if (!inline) {
-        throw Object.assign(new Error("El model no ha retornat cap imatge"), { status: 502 });
+        throw Object.assign(new Error("Gemini no ha retornat cap imatge"), { status: 502 });
       }
 
       const bytes = Buffer.from(inline.data, "base64");
@@ -85,11 +85,14 @@ Strict rules: NO text, NO letters, NO numbers, NO logos, NO watermarks anywhere 
     }
   }
 
-  console.error("ERROR GENERATE IMAGE: all model candidates failed", {
-    message: lastError?.message,
-  });
-  return NextResponse.json(
-    { error: lastError?.message || "Error generant la imatge" },
-    { status: 500 }
-  );
+  const status = lastError?.status ?? lastError?.response?.status;
+  const message =
+    status === 429
+      ? "S'ha acabat la quota de Gemini per avui. Torna-ho a provar demà o puja la imatge a mà."
+      : status === 502
+      ? "Gemini no ha fet cap imatge amb aquesta descripció. Prova de dir-ho d'una altra manera."
+      : /timeout|abort/i.test(String(lastError?.message))
+      ? "Gemini ha trigat massa. Torna-ho a provar d'aquí a una estona."
+      : "No s'ha pogut generar la imatge. Torna-ho a provar o puja-la a mà.";
+  return NextResponse.json({ error: message }, { status: status === 429 ? 429 : 500 });
 }

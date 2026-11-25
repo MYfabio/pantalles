@@ -1,27 +1,13 @@
 "use client";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  arrayMove,
-} from "@dnd-kit/sortable";
-import SortableBlockEditor, { EditableBlock } from "@/components/panel/SortableBlockEditor";
 import SustainabilityModuleEditor, {
   EditableIndicator,
 } from "@/components/panel/SustainabilityModuleEditor";
 import Link from "next/link";
 import Module from "@/components/panel/Module";
 import ScreenDataForm from "@/components/panel/ScreenDataForm";
-import PanelDisplay, { isBlockShown, isPosterBlock } from "@/components/PanelDisplay";
-import { imageSlotFor, layoutLabel, IMAGE_SLOTS } from "@/lib/panel-layout";
+import PanelDisplay from "@/components/PanelDisplay";
+import PosterEditor, { EditableBlock } from "@/components/panel/PosterEditor";
 import {
   THEME_PRESETS,
   FONT_SCALES,
@@ -59,7 +45,30 @@ interface Panel {
   fontScale: number;
 }
 
-type ModuleKey = "capcalera" | "aparenca" | "blocs" | "dades";
+type ModuleKey = "capcalera" | "aparenca" | "cartell" | "dades";
+
+/**
+ * El bloc que fa de cartell a pantalla completa: el que ja ho era o, si no,
+ * el General. Tots els contingut en tenen un (lib/panel-defaults.ts).
+ */
+function posterOf(blocks: EditableBlock[]): EditableBlock | null {
+  return blocks.find((b) => b.fullBleed) ?? blocks.find((b) => b.key === "general") ?? blocks[0] ?? null;
+}
+
+/**
+ * La pantalla mostra només el cartell. Els altres blocs (dels temps en què
+ * n'hi havia cinc) es desactiven en desar, però no s'esborren.
+ */
+function withPosterOnly(blocks: EditableBlock[]): EditableBlock[] {
+  const poster = posterOf(blocks);
+  return [...blocks]
+    .sort((a, b) => a.order - b.order)
+    .map((b) =>
+      b.id === poster?.id
+        ? { ...b, fullBleed: true, enabled: Boolean(b.imageUrl || b.videoUrl) }
+        : { ...b, enabled: false }
+    );
+}
 
 function hhmm(d: Date) {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
@@ -100,10 +109,9 @@ export default function ScreenEditor({ screenId }: { screenId: string }) {
   const [openModules, setOpenModules] = useState<Record<ModuleKey, boolean>>({
     capcalera: false,
     aparenca: false,
-    blocs: true,
+    cartell: true,
     dades: false,
   });
-  const [openBlockId, setOpenBlockId] = useState<string | null>(null);
 
   // What was last loaded or saved, so the bar can say whether there is
   // anything unsaved. The snapshot is taken after the state settles (see the
@@ -111,8 +119,6 @@ export default function ScreenEditor({ screenId }: { screenId: string }) {
   const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
   const [cleanTick, setCleanTick] = useState(0);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
-
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const toggleModule = (key: ModuleKey) =>
     setOpenModules((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -135,8 +141,6 @@ export default function ScreenEditor({ screenId }: { screenId: string }) {
     const res = await fetch(`/api/panel-blocks?panelId=${id}`, { cache: "no-store" });
     const data: EditableBlock[] = await res.json();
     setBlocks(data);
-    const first = [...data].sort((a, b) => a.order - b.order)[0];
-    setOpenBlockId((prev) => (data.some((b) => b.id === prev) ? prev : first?.id ?? null));
   }, []);
 
   const loadData = useCallback(async () => {
@@ -305,18 +309,6 @@ export default function ScreenEditor({ screenId }: { screenId: string }) {
     }
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-
-    setBlocks((prev) => {
-      const oldIndex = prev.findIndex((b) => b.id === active.id);
-      const newIndex = prev.findIndex((b) => b.id === over.id);
-      const reordered = arrayMove(prev, oldIndex, newIndex);
-      return reordered.map((b, index) => ({ ...b, order: index }));
-    });
-  };
-
   const checkResponse = async (res: Response, label: string) => {
     if (!res.ok) {
       let detail = "";
@@ -333,10 +325,11 @@ export default function ScreenEditor({ screenId }: { screenId: string }) {
 
   const handleSave = async () => {
     if (!panelId) return;
+    const toSave = withPosterOnly(blocks);
     setSaving(true);
     try {
       await Promise.all(
-        blocks.map((b) =>
+        toSave.map((b) =>
           fetch(`/api/panel-blocks/${b.id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
@@ -359,7 +352,7 @@ export default function ScreenEditor({ screenId }: { screenId: string }) {
       const orderRes = await fetch("/api/panel-blocks", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ blocks: blocks.map((b) => ({ id: b.id, order: b.order })) }),
+        body: JSON.stringify({ blocks: toSave.map((b) => ({ id: b.id, order: b.order })) }),
       });
       await checkResponse(orderRes, "Ordre dels blocs");
 
@@ -421,7 +414,7 @@ export default function ScreenEditor({ screenId }: { screenId: string }) {
     );
   }
 
-  const previewBlocks = [...blocks]
+  const previewBlocks = withPosterOnly(blocks)
     .sort((a, b) => a.order - b.order)
     .map((b) => ({
       key: b.key,
@@ -434,20 +427,6 @@ export default function ScreenEditor({ screenId }: { screenId: string }) {
       videoUrl: b.videoUrl,
       fullBleed: b.fullBleed,
     }));
-
-  // Which blocks the panel will actually draw, in the same terms PanelDisplay
-  // uses, so the editor's size advice matches what appears on screen.
-  const isShown = (b: EditableBlock) => isBlockShown(b);
-  const byOrder = (a: EditableBlock, b: EditableBlock) => a.order - b.order;
-  const shownBlocks = blocks.filter(isShown).sort(byOrder);
-  // For a block that is not shown yet, advise as if it were switched on.
-  const slotFor = (block: EditableBlock) => {
-    if (block.fullBleed) return IMAGE_SLOTS.POSTER;
-    const list = shownBlocks.includes(block)
-      ? shownBlocks
-      : [...shownBlocks, block].sort(byOrder);
-    return imageSlotFor(list.length, list.indexOf(block), block.key);
-  };
 
   const theme = resolveTheme({ themePrimary, themeDark, fontScale });
   const presetId = presetIdFor({ themePrimary, themeDark, fontScale });
@@ -494,10 +473,8 @@ export default function ScreenEditor({ screenId }: { screenId: string }) {
   const appearanceSummary = `${
     inheritsTheme ? "Color del centre" : THEME_PRESETS.find((p) => p.id === presetId)?.label ?? "Color propi"
   } · lletra ${fontLabel.toLowerCase()}`;
-  const posterBlock = shownBlocks.find(isPosterBlock);
-  const blocksSummary = posterBlock
-    ? `Cartell a pantalla completa (${posterBlock.title || "sense títol"})`
-    : `${shownBlocks.length} ${shownBlocks.length === 1 ? "actiu" : "actius"} · ${layoutLabel(shownBlocks.length)}`;
+  const poster = posterOf(blocks);
+  const posterSummary = poster?.videoUrl ? "Vídeo" : poster?.imageUrl ? "Imatge" : "Encara buida";
   const otherScreens = screens.filter((sc) => sc.id !== screenId);
   const dataSummary = [screen.location, screen.active === false ? "Inactiva" : "Activa"]
     .filter(Boolean)
@@ -649,6 +626,18 @@ export default function ScreenEditor({ screenId }: { screenId: string }) {
               {toggleRow("Mostrar frase del dia", showQuote, setShowQuote)}
               {toggleRow("Mostrar sostenibilitat", showSustainability, setShowSustainability)}
             </div>
+            {showSustainability && (
+              <div className="mt-3">
+                <SustainabilityModuleEditor
+                  indicators={sustainabilityIndicators}
+                  onChangeIndicator={updateIndicator}
+                  imageUrl={sustainabilityImageUrl}
+                  onImageUpload={handleSustainabilityImageUpload}
+                  onImageRemove={() => setSustainabilityImageUrl("")}
+                  uploadingImage={uploadingSustainabilityImage}
+                />
+              </div>
+            )}
           </Module>
 
           <Module
@@ -752,53 +741,24 @@ export default function ScreenEditor({ screenId }: { screenId: string }) {
                 </p>
               </div>
             </div>
-            <p className="text-[11px] text-gray-400 mt-3">
-              Els colors de cada bloc (General, Secretaria, ESO…) no canvien: diuen de quin tipus és
-              l&apos;avís i són iguals a tots els panells.
-            </p>
           </Module>
 
           <Module
-            title="Blocs"
-            summary={blocksSummary}
-            open={openModules.blocs}
-            onToggle={() => toggleModule("blocs")}
+            title="Imatge o vídeo"
+            summary={posterSummary}
+            open={openModules.cartell}
+            onToggle={() => toggleModule("cartell")}
           >
-            <div className="flex items-baseline justify-between mb-2 gap-3">
-              <span className="text-xs text-gray-500">{layoutLabel(shownBlocks.length)}</span>
-              <span className="text-[11px] text-gray-400">
-                Arrossega per canviar l&apos;ordre · s&apos;edita un bloc alhora
-              </span>
-            </div>
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext
-                items={blocks.map((b) => b.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                {blocks
-                  .slice()
-                  .sort((a, b) => a.order - b.order)
-                  .map((block) => (
-                    <SortableBlockEditor
-                      key={block.id}
-                      block={block}
-                      onChange={updateBlock}
-                      imageSlot={slotFor(block)}
-                      expanded={openBlockId === block.id}
-                      onToggle={() => setOpenBlockId(openBlockId === block.id ? null : block.id)}
-                    />
-                  ))}
-              </SortableContext>
-            </DndContext>
-
-            <SustainabilityModuleEditor
-              indicators={sustainabilityIndicators}
-              onChangeIndicator={updateIndicator}
-              imageUrl={sustainabilityImageUrl}
-              onImageUpload={handleSustainabilityImageUpload}
-              onImageRemove={() => setSustainabilityImageUrl("")}
-              uploadingImage={uploadingSustainabilityImage}
-            />
+            {poster ? (
+              <PosterEditor
+                block={poster}
+                onChange={(patch) => updateBlock(poster.id, patch)}
+                primary={theme.primary}
+                dark={theme.dark}
+              />
+            ) : (
+              <p className="text-sm text-gray-500">Aquesta pantalla no té contingut. Torna a carregar la pàgina.</p>
+            )}
           </Module>
 
           <Module

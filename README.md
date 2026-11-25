@@ -20,12 +20,18 @@ d'aquestes dates desapareix sol de les pantalles, sense haver-hi de tornar.
 
 ## Editor d'una pantalla
 
-L'editor (`/dashboard/screens/<id>/edit`) té quatre mòduls plegables a
-l'esquerra (Capçalera, Aparença, Blocs, Dades de la pantalla) i la
-previsualització fixa a la dreta. Dels blocs només s'obre el que s'edita; la
-resta es veuen com una línia amb el títol, el tipus, les dates de publicació i
-el mitjà. La barra de dalt diu si hi ha canvis sense desar. Les dades de la
-pantalla (nom, ubicació, rotació de webs) es desen amb el seu propi botó.
+L'editor (`/dashboard/screens/<id>/edit`) té quatre mòduls plegables
+(Capçalera, Aparença, Imatge o vídeo, Dades de la pantalla) i la
+previsualització fixa a la dreta. La barra de dalt diu si hi ha canvis sense
+desar.
+
+**Cada pantalla mostra la capçalera i una sola imatge o vídeo a pantalla
+completa** (1080 × 1600). Els cinc blocs d'abans (General, Secretaria, ESO,
+Batxillerat, FP) ja no s'editen: en desar es desactiven, però no s'esborren.
+El cartell es pot pujar o descriure perquè el faci Gemini
+(`/api/generate-image`); el text que se li envia el construeix
+`lib/poster-prompt.ts` (mida, colors de la pantalla i text en català), i el
+botó «Copia el prompt» dona exactament el mateix per fer-lo a fora.
 
 ## Aparença per panell
 
