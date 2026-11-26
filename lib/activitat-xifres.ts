@@ -47,8 +47,8 @@ export function construirDominis(actius: FilaActius[], ia: FilaIA[]): Domini[] {
     const ant = m.get(model) ?? { entrada: 0, sortida: 0 };
     m.set(model, { entrada: ant.entrada + Math.max(0, Math.round(t.entrada)), sortida: ant.sortida + Math.max(0, Math.round(t.sortida)) });
   }
-  return [...mapa.entries()].map(([domini, f]) => {
-    const iaLlista = [...f.ia.entries()].slice(0, 12).map(([model, v]) => ({ model, ...v }));
+  return Array.from(mapa.entries()).map(([domini, f]) => {
+    const iaLlista = Array.from(f.ia.entries()).slice(0, 12).map(([model, v]) => ({ model, ...v }));
     return { domini, actiusHora: f.actiusHora, actiusDia: Math.max(f.actiusDia, f.actiusHora), ...(iaLlista.length ? { ia: iaLlista } : {}) };
   });
 }

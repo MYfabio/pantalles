@@ -38,7 +38,7 @@ export async function xifresDeLHora(inici: Date): Promise<Domini[]> {
     f.actiusDia += Number(r.dia);
     perDomini.set(domini, f);
   }
-  return construirDominis([...perDomini.values()], []);
+  return construirDominis(Array.from(perDomini.values()), []);
 }
 
 /** `inici`: inici d'una hora ja tancada. No llança mai. */
@@ -74,7 +74,7 @@ export function iniciarInformeActivitat() {
       if (fetes.has(hora.getTime())) continue;
       if ((await enviarInformeActivitat(hora)) !== "error") fetes.add(hora.getTime());
     }
-    for (const t of fetes) if (Date.now() - t > 6 * HORA_MS) fetes.delete(t);
+    Array.from(fetes).forEach((t) => { if (Date.now() - t > 6 * HORA_MS) fetes.delete(t); });
   };
   setTimeout(() => void tic(), 60_000).unref?.();
   setInterval(() => void tic(), 10 * 60_000).unref?.();
