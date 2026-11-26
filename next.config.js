@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   poweredByHeader: false,
+  // Next 14: cal activar instrumentation.ts (informe d'activitat cap a aulaia.cat).
+  experimental: { instrumentationHook: true },
   async headers() {
     return [
       {
